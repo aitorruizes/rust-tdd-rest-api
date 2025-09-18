@@ -11,6 +11,10 @@ pub mod application {
         pub mod database {
             pub mod user_database_port;
         }
+
+        pub mod hasher {
+            pub mod hasher_port;
+        }
     }
 }
 
@@ -18,6 +22,12 @@ pub mod infrastructure {
     pub mod repositories {
         pub mod user {
             pub mod create_user_repository;
+        }
+    }
+
+    pub mod adapters {
+        pub mod bcrypt {
+            pub mod bcrypt_adapter;
         }
     }
 }
