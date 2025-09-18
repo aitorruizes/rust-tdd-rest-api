@@ -4,7 +4,7 @@ pub struct BcryptAdapter;
 
 impl BcryptAdapter {
     pub fn new() -> Self {
-        BcryptAdapter {}
+        BcryptAdapter
     }
 }
 

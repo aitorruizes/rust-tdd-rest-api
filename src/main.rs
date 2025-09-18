@@ -15,6 +15,10 @@ pub mod application {
         pub mod hasher {
             pub mod hasher_port;
         }
+
+        pub mod id_generator {
+            pub mod id_generator_port;
+        }
     }
 }
 
@@ -28,6 +32,10 @@ pub mod infrastructure {
     pub mod adapters {
         pub mod bcrypt {
             pub mod bcrypt_adapter;
+        }
+
+        pub mod uuid {
+            pub mod uuid_adapter;
         }
     }
 }
