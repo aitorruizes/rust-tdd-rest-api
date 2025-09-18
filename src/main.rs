@@ -1,3 +1,14 @@
+use crate::{
+    application::ports::{
+        logger::logger_port::LoggerPort,
+        logger_subscriber::logger_subsriber_port::LoggerSubscriberPort,
+    },
+    infrastructure::adapters::{
+        tracing::tracing_adapter::TracingAdapter,
+        tracing_subscriber::tracing_subscriber_adapter::TracingSubscriberAdapter,
+    },
+};
+
 pub mod domain {
     pub mod entities {
         pub mod user {
@@ -25,6 +36,14 @@ pub mod application {
         pub mod id_generator {
             pub mod id_generator_port;
         }
+
+        pub mod logger {
+            pub mod logger_port;
+        }
+
+        pub mod logger_subscriber {
+            pub mod logger_subsriber_port;
+        }
     }
 
     pub mod use_cases {
@@ -49,6 +68,14 @@ pub mod infrastructure {
         pub mod uuid {
             pub mod uuid_adapter;
         }
+
+        pub mod tracing {
+            pub mod tracing_adapter;
+        }
+
+        pub mod tracing_subscriber {
+            pub mod tracing_subscriber_adapter;
+        }
     }
 }
 
@@ -61,5 +88,11 @@ pub mod presentation {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let tracing_subscriber_adapter: TracingSubscriberAdapter = TracingSubscriberAdapter::default();
+
+    tracing_subscriber_adapter.initialize();
+
+    let tracing_adapter: TracingAdapter = TracingAdapter::default();
+
+    tracing_adapter.log_info("Hello, World!");
 }
