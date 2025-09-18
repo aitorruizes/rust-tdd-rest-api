@@ -5,7 +5,7 @@ use crate::{
     domain::entities::user::user_entity::UserEntity,
 };
 
-pub trait CreateUserRepositoryPort {
+pub trait CreateUserRepositoryPort: Send + Sync {
     fn execute(
         &self,
         user_entity: UserEntity,
@@ -35,7 +35,9 @@ impl CreateUserRepositoryPort for CreateUserRepository {
                 .as_ref()
                 .insert_user(user_entity)
                 .await
-                .map_err(|err| UserDatabaseError::InsertError(err.to_string()))
+                .map_err(|err| UserDatabaseError::InsertError {
+                    message: err.to_string(),
+                })
         })
     }
 }
@@ -126,9 +128,11 @@ mod tests {
         let mut user_gateway_mock: MockUserDatabasePort = MockUserDatabasePort::new();
 
         user_gateway_mock.expect_insert_user().returning(move |_| {
-            Box::pin(
-                async move { Err(UserDatabaseError::InsertError("Database error".to_string())) },
-            )
+            Box::pin(async move {
+                Err(UserDatabaseError::InsertError {
+                    message: "Database error".to_string(),
+                })
+            })
         });
 
         let create_user_repository: CreateUserRepository =
@@ -143,7 +147,9 @@ mod tests {
 
         assert_eq!(
             user_database_error,
-            UserDatabaseError::InsertError("Insert Error: Database error".to_string())
+            UserDatabaseError::InsertError {
+                message: "Insert Error: Database error".to_string()
+            }
         );
     }
 }

@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum HasherError {
     HashingError { message: String },
     VerificationError { message: String },
@@ -23,7 +23,7 @@ impl std::fmt::Display for HasherError {
 
 impl std::error::Error for HasherError {}
 
-pub trait HasherPort {
+pub trait HasherPort: Send + Sync {
     fn hash(&self, password: &str) -> Result<String, HasherError>;
     fn verify(&self, password: &str, password_hash: &str) -> Result<bool, HasherError>;
 }

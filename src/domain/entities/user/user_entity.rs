@@ -23,7 +23,6 @@ pub struct UserEntityBuilder {
 }
 
 impl UserEntityBuilder {
-    // Inicializa o builder com valores default (ou iniciais)
     pub fn new() -> Self {
         Self {
             id: "".to_string(),
@@ -37,7 +36,6 @@ impl UserEntityBuilder {
         }
     }
 
-    // Setters fluentes
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = id.into();
         self
