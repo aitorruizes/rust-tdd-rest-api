@@ -88,11 +88,11 @@ pub mod presentation {
 }
 
 fn main() {
-    let tracing_subscriber_adapter: TracingSubscriberAdapter = TracingSubscriberAdapter::default();
+    let tracing_subscriber_adapter: TracingSubscriberAdapter = TracingSubscriberAdapter;
 
     tracing_subscriber_adapter.initialize();
 
-    let tracing_adapter: TracingAdapter = TracingAdapter::default();
+    let tracing_adapter: TracingAdapter = TracingAdapter;
 
     tracing_adapter.log_info("Hello, World!");
 }
