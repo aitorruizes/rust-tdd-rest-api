@@ -44,6 +44,10 @@ pub mod application {
         pub mod logger_subscriber {
             pub mod logger_subsriber_port;
         }
+
+        pub mod tcp_server {
+            pub mod tcp_server_port;
+        }
     }
 
     pub mod use_cases {
@@ -75,6 +79,10 @@ pub mod infrastructure {
 
         pub mod tracing_subscriber {
             pub mod tracing_subscriber_adapter;
+        }
+
+        pub mod tokio {
+            pub mod tokio_adapter;
         }
     }
 }
