@@ -1,10 +1,10 @@
 use crate::{
     application::ports::{
-        logger::logger_port::LoggerPort,
+        environment::environment_port::EnvironmentPort, logger::logger_port::LoggerPort,
         logger_subscriber::logger_subsriber_port::LoggerSubscriberPort,
     },
     infrastructure::adapters::{
-        tracing::tracing_adapter::TracingAdapter,
+        dotenvy::dotenvy_adapter::DotenvyAdapter, tracing::tracing_adapter::TracingAdapter,
         tracing_subscriber::tracing_subscriber_adapter::TracingSubscriberAdapter,
     },
 };
@@ -48,6 +48,10 @@ pub mod application {
         pub mod tcp_server {
             pub mod tcp_server_port;
         }
+
+        pub mod environment {
+            pub mod environment_port;
+        }
     }
 
     pub mod use_cases {
@@ -84,6 +88,10 @@ pub mod infrastructure {
         pub mod tokio {
             pub mod tokio_adapter;
         }
+
+        pub mod dotenvy {
+            pub mod dotenvy_adapter;
+        }
     }
 }
 
@@ -101,6 +109,10 @@ fn main() {
     tracing_subscriber_adapter.initialize();
 
     let tracing_adapter: TracingAdapter = TracingAdapter;
+    let dotenvy_adapter: DotenvyAdapter = DotenvyAdapter::new();
 
-    tracing_adapter.log_info("Hello, World!");
+    match dotenvy_adapter.load_environment_file() {
+        Ok(_) => tracing_adapter.log_info("Environment file successfully loaded."),
+        Err(err) => tracing_adapter.log_error(&err.to_string()),
+    };
 }
