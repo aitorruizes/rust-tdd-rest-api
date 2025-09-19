@@ -4,7 +4,10 @@ use serde_json::{Value, json};
 
 use crate::{
     application::{
-        ports::validator::validator_port::ValidatorPort,
+        ports::{
+            pattern_matching::pattern_matching_port::{PatternMatchingError, PatternMatchingPort},
+            validator::validator_port::ValidatorPort,
+        },
         use_cases::user::create_user_use_case::{CreateUserUseCaseError, CreateUserUseCasePort},
     },
     presentation::{
@@ -18,15 +21,18 @@ use crate::{
 
 pub struct CreateUserController {
     create_user_validator: Box<dyn ValidatorPort>,
+    pattern_matching_adapter: Box<dyn PatternMatchingPort>,
     create_user_use_case: Box<dyn CreateUserUseCasePort>,
 }
 
 impl CreateUserController {
     pub fn new(
         create_user_validator: Box<dyn ValidatorPort>,
+        pattern_matching_adapter: Box<dyn PatternMatchingPort>,
         create_user_use_case: Box<dyn CreateUserUseCasePort>,
     ) -> Self {
         CreateUserController {
+            pattern_matching_adapter,
             create_user_validator,
             create_user_use_case,
         }
@@ -61,6 +67,90 @@ impl ControllerPort for CreateUserController {
                         "details": errors
                     })),
                 };
+            }
+
+            let is_valid_email: Result<bool, PatternMatchingError> = self
+                .pattern_matching_adapter
+                .is_valid_email(body["email"].as_str().unwrap());
+
+            match is_valid_email {
+                Ok(result) => match result {
+                    true => {}
+                    false => {
+                        return HttpResponseDto {
+                            status_code: 400,
+                            body: Some(json!({
+                                "error_code": "invalid_email",
+                                "error_message": PatternMatchingError::InvalidEmail.to_string(),
+                            })),
+                        };
+                    }
+                },
+                Err(err) => {
+                    return HttpResponseDto {
+                        status_code: 400,
+                        body: Some(json!({
+                            "error_code": "invalid_regex",
+                            "error_message": err.to_string(),
+                        })),
+                    };
+                }
+            }
+
+            let is_valid_email_domain: Result<bool, PatternMatchingError> = self
+                .pattern_matching_adapter
+                .is_valid_email_domain(body["email"].as_str().unwrap());
+
+            match is_valid_email_domain {
+                Ok(result) => match result {
+                    true => {}
+                    false => {
+                        return HttpResponseDto {
+                            status_code: 400,
+                            body: Some(json!({
+                                "error_code": "invalid_email_domain",
+                                "error_message": PatternMatchingError::InvalidEmailDomain.to_string(),
+                            })),
+                        };
+                    }
+                },
+                Err(err) => {
+                    return HttpResponseDto {
+                        status_code: 400,
+                        body: Some(json!({
+                            "error_code": "invalid_regex",
+                            "error_message": err.to_string(),
+                        })),
+                    };
+                }
+            }
+
+            let is_valid_password: Result<bool, PatternMatchingError> = self
+                .pattern_matching_adapter
+                .is_valid_password(body["password"].as_str().unwrap());
+
+            match is_valid_password {
+                Ok(result) => match result {
+                    true => {}
+                    false => {
+                        return HttpResponseDto {
+                            status_code: 400,
+                            body: Some(json!({
+                                "error_code": "invalid_password",
+                                "error_message": PatternMatchingError::InvalidPassword.to_string(),
+                            })),
+                        };
+                    }
+                },
+                Err(err) => {
+                    return HttpResponseDto {
+                        status_code: 400,
+                        body: Some(json!({
+                            "error_code": "invalid_regex",
+                            "error_message": err.to_string(),
+                        })),
+                    };
+                }
             }
 
             let create_user_dto: CreateUserDto = CreateUserDto::new(
@@ -99,6 +189,7 @@ impl Clone for CreateUserController {
     fn clone(&self) -> Self {
         Self {
             create_user_validator: self.create_user_validator.clone_box(),
+            pattern_matching_adapter: self.pattern_matching_adapter.clone_box(),
             create_user_use_case: self.create_user_use_case.clone_box(),
         }
     }

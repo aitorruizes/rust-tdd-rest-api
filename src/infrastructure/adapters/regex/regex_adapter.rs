@@ -4,6 +4,7 @@ use crate::application::ports::pattern_matching::pattern_matching_port::{
     PatternMatchingError, PatternMatchingPort,
 };
 
+#[derive(Clone)]
 pub struct RegexAdapter;
 
 impl RegexAdapter {

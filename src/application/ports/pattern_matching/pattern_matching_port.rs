@@ -21,7 +21,7 @@ impl std::fmt::Display for PatternMatchingError {
             PatternMatchingError::InvalidPassword => {
                 write!(
                     f,
-                    "the provided password should contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one number, and one special character (@, $, !, %, *, ?, &)"
+                    "the provided password should contain at least 12 characters"
                 )
             }
         }
@@ -30,8 +30,27 @@ impl std::fmt::Display for PatternMatchingError {
 
 impl std::error::Error for PatternMatchingError {}
 
-pub trait PatternMatchingPort {
+pub trait PatternMatchingPort: PatternMatchingPortClone + Send + Sync {
     fn is_valid_email(&self, email: &str) -> Result<bool, PatternMatchingError>;
     fn is_valid_email_domain(&self, email: &str) -> Result<bool, PatternMatchingError>;
     fn is_valid_password(&self, password: &str) -> Result<bool, PatternMatchingError>;
+}
+
+pub trait PatternMatchingPortClone {
+    fn clone_box(&self) -> Box<dyn PatternMatchingPort + Send + Sync>;
+}
+
+impl<T> PatternMatchingPortClone for T
+where
+    T: PatternMatchingPort + Clone + Send + Sync + 'static,
+{
+    fn clone_box(&self) -> Box<dyn PatternMatchingPort + Send + Sync> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn PatternMatchingPort + Send + Sync> {
+    fn clone(&self) -> Box<dyn PatternMatchingPort + Send + Sync> {
+        self.as_ref().clone_box()
+    }
 }
