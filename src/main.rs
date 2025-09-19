@@ -17,6 +17,7 @@ pub mod domain {
 pub mod application {
     pub mod ports {
         pub mod database {
+            pub mod database_port;
             pub mod user_database_port;
         }
 
@@ -46,6 +47,10 @@ pub mod application {
 
         pub mod web_framework {
             pub mod web_framework_port;
+        }
+
+        pub mod validator {
+            pub mod validator_port;
         }
     }
 
@@ -94,6 +99,13 @@ pub mod infrastructure {
         }
     }
 
+    pub mod gateways {
+        pub mod database {
+            pub mod database_gateway;
+            pub mod user_database_gateway;
+        }
+    }
+
     pub mod boostrap {
         pub mod api {
             pub mod api_boostrap;
@@ -116,6 +128,7 @@ pub mod presentation {
     pub mod controllers {
         pub mod user {
             pub mod create_user_controller;
+            pub mod create_user_validator;
         }
     }
 

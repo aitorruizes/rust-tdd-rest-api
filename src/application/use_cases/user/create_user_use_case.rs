@@ -7,8 +7,7 @@ use crate::{
         id_generator::id_generator_port::IdGeneratorPort,
     },
     domain::{
-        entities::user::user_entity::{UserEntity, UserEntityBuilder},
-        errors::user::user_errors::UserError,
+        entities::user::user_entity::UserEntityBuilder, errors::user::user_errors::UserError,
     },
     infrastructure::repositories::user::create_user_repository::CreateUserRepositoryPort,
     presentation::dtos::user::create_user_dto::CreateUserDto,
@@ -21,11 +20,50 @@ pub enum CreateUserUseCaseError {
     DatabaseError(UserDatabaseError),
 }
 
-pub trait CreateUserUseCasePort: Send + Sync {
+impl std::fmt::Display for CreateUserUseCaseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreateUserUseCaseError::HasherError(e) => write!(f, "{}", e),
+            CreateUserUseCaseError::UserError(e) => write!(f, "{}", e),
+            CreateUserUseCaseError::DatabaseError(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl std::error::Error for CreateUserUseCaseError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CreateUserUseCaseError::HasherError(e) => Some(e),
+            CreateUserUseCaseError::UserError(e) => Some(e),
+            CreateUserUseCaseError::DatabaseError(e) => Some(e),
+        }
+    }
+}
+
+pub trait CreateUserUseCasePort: CreateUserUseCasePortClone + Send + Sync {
     fn perform(
         &self,
         create_user_dto: CreateUserDto,
-    ) -> Pin<Box<dyn Future<Output = Result<UserEntity, CreateUserUseCaseError>> + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = Result<(), CreateUserUseCaseError>> + Send + '_>>;
+}
+
+pub trait CreateUserUseCasePortClone {
+    fn clone_box(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync>;
+}
+
+impl<T> CreateUserUseCasePortClone for T
+where
+    T: CreateUserUseCasePort + Clone + Send + Sync + 'static,
+{
+    fn clone_box(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn CreateUserUseCasePort + Send + Sync> {
+    fn clone(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync> {
+        self.as_ref().clone_box()
+    }
 }
 
 pub struct CreateUserUseCase {
@@ -52,7 +90,7 @@ impl CreateUserUseCasePort for CreateUserUseCase {
     fn perform(
         &self,
         create_user_dto: CreateUserDto,
-    ) -> Pin<Box<dyn Future<Output = Result<UserEntity, CreateUserUseCaseError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), CreateUserUseCaseError>> + Send + '_>> {
         Box::pin(async move {
             if create_user_dto.password != create_user_dto.password_confirmation {
                 return Err(CreateUserUseCaseError::UserError(
@@ -79,8 +117,20 @@ impl CreateUserUseCasePort for CreateUserUseCase {
                 .as_ref()
                 .execute(user_entity)
                 .await
-                .map_err(CreateUserUseCaseError::DatabaseError)
+                .map_err(CreateUserUseCaseError::DatabaseError)?;
+
+            Ok(())
         })
+    }
+}
+
+impl Clone for CreateUserUseCase {
+    fn clone(&self) -> Self {
+        Self {
+            hasher_adapter: self.hasher_adapter.clone_box(),
+            id_generator_adapter: self.id_generator_adapter.clone_box(),
+            create_user_repository: self.create_user_repository.clone_box(),
+        }
     }
 }
 
@@ -113,7 +163,13 @@ mod tests {
             fn execute(
                 &self,
                 user_entity: UserEntity,
-            ) -> Pin<Box<dyn Future<Output = Result<UserEntity, UserDatabaseError>> + Sync + Send + 'static>>;
+            ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + 'static>>;
+        }
+
+        impl Clone for CreateUserRepository {
+            fn clone(&self) -> Self {
+                MockCreateUserRepository::new()
+            }
         }
     }
 
@@ -124,6 +180,12 @@ mod tests {
             fn hash(&self, password: &str) -> Result<String, HasherError>;
             fn verify(&self, password: &str, password_hash: &str) -> Result<bool, HasherError>;
         }
+
+        impl Clone for HasherAdapter {
+            fn clone(&self) -> Self {
+                MockHasherAdapter::new()
+            }
+        }
     }
 
     mock! {
@@ -131,6 +193,12 @@ mod tests {
 
         impl IdGeneratorPort for IdGeneratorAdapter {
             fn generate_id(&self) -> String;
+        }
+
+        impl Clone for IdGeneratorAdapter {
+            fn clone(&self) -> Self {
+                MockIdGeneratorAdapter::new()
+            }
         }
     }
 
@@ -142,7 +210,7 @@ mod tests {
         create_user_repository_mock
             .expect_execute()
             .times(1)
-            .returning(|user_entity| Box::pin(async move { Ok(user_entity) }));
+            .returning(|_| Box::pin(async move { Ok(()) }));
 
         let mut hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
 
@@ -173,7 +241,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<UserEntity, CreateUserUseCaseError> =
+        let result: Result<(), CreateUserUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_ok());
@@ -224,7 +292,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<UserEntity, CreateUserUseCaseError> =
+        let result: Result<(), CreateUserUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());
@@ -262,7 +330,7 @@ mod tests {
             "Password1234!".to_string(),
         );
 
-        let result: Result<UserEntity, CreateUserUseCaseError> =
+        let result: Result<(), CreateUserUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());
@@ -304,7 +372,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<UserEntity, CreateUserUseCaseError> =
+        let result: Result<(), CreateUserUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());

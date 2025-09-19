@@ -4,13 +4,11 @@ use crate::presentation::dtos::http::{
     http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto,
 };
 
-use std::future::Future;
-
 pub trait ControllerPort: ControllerPortClone + Send + Sync {
     fn handle(
         &self,
         request: HttpRequestDto,
-    ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send>>;
+    ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>>;
 }
 
 pub trait ControllerPortClone {

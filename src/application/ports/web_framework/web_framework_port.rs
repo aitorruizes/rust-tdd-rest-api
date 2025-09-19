@@ -1,6 +1,9 @@
 use std::{any::Any, pin::Pin};
 
-use crate::presentation::ports::controller::controller_port::ControllerPort;
+use crate::{
+    application::ports::database::database_port::PoolWrapper,
+    presentation::ports::controller::controller_port::ControllerPort,
+};
 
 pub type ServeFuture<'a> =
     Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + 'a>>;
@@ -18,7 +21,7 @@ pub trait RouterWrapper: Send + Sync {
 }
 
 pub trait WebFrameworkPort {
-    fn serve(&self) -> ServeFuture<'_>;
+    fn serve(&self, database_pool: Box<dyn PoolWrapper>) -> ServeFuture<'_>;
 }
 
 pub trait WebFrameworkRoutePort {

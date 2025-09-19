@@ -1,5 +1,6 @@
 use crate::application::ports::hasher::hasher_port::{HasherError, HasherPort};
 
+#[derive(Clone)]
 pub struct BcryptAdapter;
 
 impl BcryptAdapter {

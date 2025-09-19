@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::Deserialize;
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct CreateUserDto {
     pub id: Option<String>,
     pub first_name: String,

@@ -1,5 +1,6 @@
 use crate::application::ports::id_generator::id_generator_port::IdGeneratorPort;
 
+#[derive(Clone)]
 pub struct UuidAdapter;
 
 impl UuidAdapter {

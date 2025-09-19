@@ -5,11 +5,30 @@ use crate::{
     domain::entities::user::user_entity::UserEntity,
 };
 
-pub trait CreateUserRepositoryPort: Send + Sync {
+pub trait CreateUserRepositoryPort: CreateUserRepositoryPortClone + Send + Sync {
     fn execute(
         &self,
         user_entity: UserEntity,
-    ) -> Pin<Box<dyn Future<Output = Result<UserEntity, UserDatabaseError>> + Sync + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + '_>>;
+}
+
+pub trait CreateUserRepositoryPortClone {
+    fn clone_box(&self) -> Box<dyn CreateUserRepositoryPort + Send + Sync>;
+}
+
+impl<T> CreateUserRepositoryPortClone for T
+where
+    T: CreateUserRepositoryPort + Clone + Send + Sync + 'static,
+{
+    fn clone_box(&self) -> Box<dyn CreateUserRepositoryPort + Send + Sync> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn CreateUserRepositoryPort + Send + Sync> {
+    fn clone(&self) -> Box<dyn CreateUserRepositoryPort + Send + Sync> {
+        self.as_ref().clone_box()
+    }
 }
 
 pub struct CreateUserRepository {
@@ -28,8 +47,7 @@ impl CreateUserRepositoryPort for CreateUserRepository {
     fn execute(
         &self,
         user_entity: UserEntity,
-    ) -> Pin<Box<dyn Future<Output = Result<UserEntity, UserDatabaseError>> + Sync + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + '_>> {
         Box::pin(async move {
             self.user_database_gateway
                 .as_ref()
@@ -37,8 +55,18 @@ impl CreateUserRepositoryPort for CreateUserRepository {
                 .await
                 .map_err(|err| UserDatabaseError::InsertError {
                     message: err.to_string(),
-                })
+                })?;
+
+            Ok(())
         })
+    }
+}
+
+impl Clone for CreateUserRepository {
+    fn clone(&self) -> Self {
+        Self {
+            user_database_gateway: self.user_database_gateway.clone_box(),
+        }
     }
 }
 
@@ -57,13 +85,20 @@ mod tests {
     };
 
     mock! {
+        #[derive(Clone)]
         pub UserDatabasePort {}
 
         impl UserDatabasePort for UserDatabasePort {
             fn insert_user(
                 &self,
                 user_entity: UserEntity,
-            ) -> Pin<Box<dyn Future<Output = Result<UserEntity, UserDatabaseError>> + Send + Sync>>;
+            ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + 'static>>;
+        }
+
+        impl Clone for UserDatabasePort {
+            fn clone(&self) -> Self {
+                MockUserDatabasePort::new()
+            }
         }
     }
 
@@ -82,32 +117,19 @@ mod tests {
             .updated_at("2025-09-17T19:00:00Z".to_string())
             .build();
 
-        let user_entity_for_returning: UserEntity = user_entity.clone();
         let mut user_gateway_mock: MockUserDatabasePort = MockUserDatabasePort::new();
 
-        user_gateway_mock.expect_insert_user().returning(move |_| {
-            let user_entity: UserEntity = user_entity_for_returning.clone();
-
-            Box::pin(async move { Ok(user_entity) })
-        });
+        user_gateway_mock
+            .expect_insert_user()
+            .returning(move |_| Box::pin(async move { Ok(()) }));
 
         let create_user_repository: CreateUserRepository =
             CreateUserRepository::new(Box::new(user_gateway_mock));
 
-        let result: Result<UserEntity, UserDatabaseError> =
+        let result: Result<(), UserDatabaseError> =
             create_user_repository.execute(user_entity).await;
 
         assert!(result.is_ok());
-
-        let created_user: UserEntity = result.unwrap();
-
-        assert_eq!(created_user.first_name, "John");
-        assert_eq!(created_user.last_name, "Doe");
-        assert_eq!(created_user.email, "john.doe@example.com");
-        assert_eq!(created_user.password, "Password123!");
-        assert!(!created_user.is_admin);
-        assert_eq!(created_user.created_at, "2025-09-17T19:00:00Z");
-        assert_eq!(created_user.updated_at, "2025-09-17T19:00:00Z");
     }
 
     #[tokio::test]
@@ -138,7 +160,7 @@ mod tests {
         let create_user_repository: CreateUserRepository =
             CreateUserRepository::new(Box::new(user_gateway_mock));
 
-        let result: Result<UserEntity, UserDatabaseError> =
+        let result: Result<(), UserDatabaseError> =
             create_user_repository.execute(user_entity).await;
 
         assert!(result.is_err());

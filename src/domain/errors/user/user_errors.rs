@@ -6,7 +6,7 @@ pub enum UserError {
 impl std::fmt::Display for UserError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserError::PasswordsDoNotMatch => write!(f, "The provided passwords do not match."),
+            UserError::PasswordsDoNotMatch => write!(f, "the provided passwords do not match"),
         }
     }
 }
