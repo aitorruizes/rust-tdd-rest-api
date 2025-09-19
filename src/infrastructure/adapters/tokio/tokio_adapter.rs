@@ -13,7 +13,7 @@ impl TokioAdapter {
 
 impl TcpServerPort for TokioAdapter {
     fn create_listener(
-        self,
+        &self,
         server_address: String,
     ) -> Pin<Box<dyn Future<Output = Result<TcpListener, TcpServerError>>>> {
         Box::pin(async move {

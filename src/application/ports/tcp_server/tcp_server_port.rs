@@ -21,7 +21,7 @@ impl std::error::Error for TcpServerError {}
 
 pub trait TcpServerPort {
     fn create_listener(
-        self,
+        &self,
         server_address: String,
     ) -> Pin<Box<dyn Future<Output = Result<TcpListener, TcpServerError>>>>;
 }
