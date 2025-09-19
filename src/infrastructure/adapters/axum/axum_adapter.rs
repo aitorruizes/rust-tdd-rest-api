@@ -1,127 +1,103 @@
-use axum::Router;
-use sqlx::{Pool, Postgres};
-use std::pin::Pin;
-use tokio::net::TcpListener;
-
-use crate::{
-    application::{
-        ports::{
-            auth::sign_up_repository::SignUpRepositoryPort, database::database_port::PoolWrapper,
-            hasher::hasher_port::HasherPort, id_generator::id_generator_port::IdGeneratorPort,
-        },
-        use_cases::auth::sign_up_use_case::{SignUpUseCase, SignUpUseCasePort},
-    },
-    infrastructure::{
-        adapters::{
-            axum::axum_route_adapter::AxumRouteAdapter, bcrypt::bcrypt_adapter::BcryptAdapter,
-            dotenvy::dotenvy_adapter::DotenvyAdapter, regex::regex_adapter::RegexAdapter,
-            tokio::tokio_adapter::TokioAdapter, tracing::tracing_adapter::TracingAdapter,
-            uuid::uuid_adapter::UuidAdapter,
-        },
-        repositories::auth::sign_up_repository::SignUpRepository,
-    },
-    presentation::{
-        controllers::auth::{
-            sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
-        },
-        ports::router::router_port::RouterPort,
-        routers::core::core_router::CoreRouter,
-    },
+use axum::{
+    body::{Body, to_bytes},
+    extract::{Path, Request},
+    http::{Method, Response, StatusCode},
 };
 
-pub type ServeFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error + 'a>>> + 'a>>;
+use serde_json::Value;
+use std::collections::HashMap;
 
+use crate::presentation::{
+    dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
+    ports::controller::controller_port::ControllerPort,
+};
+
+#[derive(Clone)]
 pub struct AxumAdapter {
-    tokio_adapter: TokioAdapter,
-    tracing_adapter: TracingAdapter,
-    dotenvy_adapter: DotenvyAdapter,
+    controller: Box<dyn ControllerPort + Send + Sync>,
 }
 
 impl AxumAdapter {
-    pub fn new(
-        tokio_adapter: TokioAdapter,
-        tracing_adapter: TracingAdapter,
-        dotenvy_adapter: DotenvyAdapter,
-    ) -> Self {
-        AxumAdapter {
-            tokio_adapter,
-            tracing_adapter,
-            dotenvy_adapter,
-        }
+    pub fn new(controller: Box<dyn ControllerPort + Send + Sync>) -> Self {
+        Self { controller }
     }
 
-    pub fn serve(self, database_pool: Box<dyn PoolWrapper>) -> ServeFuture<'static> {
-        Box::pin(async move {
-            let server_host: String = self
-                .dotenvy_adapter
-                .get_environment_file("SERVER_HOST")
-                .unwrap_or_else(|err| {
-                    self.tracing_adapter.log_error(&err.to_string());
-                    std::process::exit(1)
-                });
+    pub async fn adapt_controller(
+        &self,
+        Path(_request_params): Path<HashMap<String, String>>,
+        req: Request<Body>,
+    ) -> Response<Body> {
+        let method: Method = match *req.method() {
+            Method::GET => Method::GET,
+            Method::POST => Method::POST,
+            Method::PUT => Method::PUT,
+            Method::PATCH => Method::PATCH,
+            Method::DELETE => Method::DELETE,
+            _ => {
+                return Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::from("Method type is invalid."))
+                    .unwrap();
+            }
+        };
 
-            let server_port: String = self
-                .dotenvy_adapter
-                .get_environment_file("SERVER_PORT")
-                .unwrap_or_else(|err| {
-                    self.tracing_adapter.log_error(&err.to_string());
-                    std::process::exit(1)
-                });
+        let uri: String = req.uri().to_string();
 
-            let server_address: String = format!("{}:{}", server_host, server_port);
+        let content_bytes = match to_bytes(req.into_body(), usize::MAX).await {
+            Ok(bytes) => bytes,
+            Err(_) => {
+                return Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from("Error reading request body."))
+                    .unwrap();
+            }
+        };
 
-            let tcp_listener: TcpListener = self
-                .tokio_adapter
-                .create_listener(server_address.clone())
-                .await
-                .unwrap_or_else(|err| {
-                    self.tracing_adapter.log_error(&err.to_string());
-                    std::process::exit(1)
-                });
+        let content: Option<Value> = if content_bytes.is_empty() {
+            None
+        } else {
+            match serde_json::from_slice(&content_bytes) {
+                Ok(json) => Some(json),
+                Err(_) => {
+                    return Response::builder()
+                        .status(StatusCode::BAD_REQUEST)
+                        .body(Body::from("Invalid JSON structure."))
+                        .unwrap();
+                }
+            }
+        };
 
-            let server_started_message: String =
-                format!("Server successfully started at '{}'.", server_address);
+        let http_request_dto: HttpRequestDto = HttpRequestDto {
+            method: method.to_string(),
+            url: uri,
+            body: content,
+        };
 
-            self.tracing_adapter.log_info(&server_started_message);
+        let http_response_dto: HttpResponseDto = self.controller.handle(http_request_dto).await;
 
-            let hasher_adapter: Box<dyn HasherPort> = Box::new(BcryptAdapter);
-            let id_generator_adapter: Box<dyn IdGeneratorPort> = Box::new(UuidAdapter);
+        let body_string: String = http_response_dto
+            .body
+            .map(|b| b.to_string())
+            .unwrap_or_else(|| "{}".to_string());
 
-            let sign_up_repository: Box<dyn SignUpRepositoryPort> =
-                Box::new(SignUpRepository::new(
-                    *database_pool
-                        .into_inner()
-                        .downcast::<Pool<Postgres>>()
-                        .unwrap(),
-                ));
+        Response::builder()
+            .status(http_response_dto.status_code)
+            .header("content-type", "application/json")
+            .body(Body::from(body_string))
+            .unwrap()
+    }
+}
 
-            let sign_up_use_case: Box<dyn SignUpUseCasePort> = Box::new(SignUpUseCase::new(
-                hasher_adapter,
-                id_generator_adapter,
-                sign_up_repository,
-            ));
+pub struct AxumRouteAdapter;
 
-            let sign_up_validator: SignUpValidator = SignUpValidator;
-            let pattern_matching: RegexAdapter = RegexAdapter;
+impl AxumRouteAdapter {
+    pub fn new() -> Self {
+        AxumRouteAdapter
+    }
+}
 
-            let sign_up_controller: SignUpController =
-                SignUpController::new(sign_up_validator, pattern_matching, sign_up_use_case);
-
-            let axum_route_adapter: AxumRouteAdapter = AxumRouteAdapter;
-
-            let core_router: CoreRouter = CoreRouter::new(axum_route_adapter, sign_up_controller);
-
-            let axum_router: Router = core_router.register_routes();
-
-            axum::serve(tcp_listener, axum_router)
-                .await
-                .unwrap_or_else(|err| {
-                    self.tracing_adapter.log_error(&err.to_string());
-                    std::process::exit(1)
-                });
-
-            Ok(())
-        })
+impl Default for AxumRouteAdapter {
+    fn default() -> Self {
+        Self::new()
     }
 }

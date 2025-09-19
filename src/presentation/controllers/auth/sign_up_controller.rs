@@ -154,7 +154,6 @@ impl ControllerPort for SignUpController {
                 body["last_name"].as_str().unwrap().to_string(),
                 body["email"].as_str().unwrap().to_string(),
                 body["password"].as_str().unwrap().to_string(),
-                body["password_confirmation"].as_str().unwrap().to_string(),
             );
 
             if let Err(err) = self.sign_up_use_case.perform(sign_up_dto).await {

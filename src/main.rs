@@ -62,25 +62,8 @@ pub mod infrastructure {
             pub mod uuid_adapter;
         }
 
-        pub mod tracing {
-            pub mod tracing_adapter;
-        }
-
-        pub mod tracing_subscriber {
-            pub mod tracing_subscriber_adapter;
-        }
-
-        pub mod tokio {
-            pub mod tokio_adapter;
-        }
-
-        pub mod dotenvy {
-            pub mod dotenvy_adapter;
-        }
-
         pub mod axum {
             pub mod axum_adapter;
-            pub mod axum_route_adapter;
         }
 
         pub mod regex {

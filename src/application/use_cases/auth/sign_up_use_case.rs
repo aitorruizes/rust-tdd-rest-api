@@ -93,12 +93,6 @@ impl SignUpUseCasePort for SignUpUseCase {
         sign_up_dto: SignUpDto,
     ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>> {
         Box::pin(async move {
-            if sign_up_dto.password != sign_up_dto.password_confirmation {
-                return Err(SignUpUseCaseError::UserError(
-                    UserError::PasswordsDoNotMatch,
-                ));
-            }
-
             let hashed_password = self
                 .hasher_adapter
                 .hash(sign_up_dto.password.as_str())
@@ -237,7 +231,6 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
-            "Password123!".to_string(),
         );
 
         let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
@@ -286,7 +279,6 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
-            "Password123!".to_string(),
         );
 
         let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
@@ -322,7 +314,6 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
-            "Password1234!".to_string(),
         );
 
         let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
@@ -361,7 +352,6 @@ mod tests {
             "John".to_string(),
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
-            "Password123!".to_string(),
             "Password123!".to_string(),
         );
 

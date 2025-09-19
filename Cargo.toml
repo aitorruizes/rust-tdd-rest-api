@@ -21,6 +21,7 @@ sqlx = { version = "0.8", features = [
     "postgres",
     "uuid",
 ] }
+tower_governor = "0.8.0"
 
 [dev-dependencies]
 mockall = "0.13.1"
