@@ -52,6 +52,10 @@ pub mod application {
         pub mod validator {
             pub mod validator_port;
         }
+
+        pub mod pattern_matching {
+            pub mod pattern_matching_port;
+        }
     }
 
     pub mod use_cases {
@@ -96,6 +100,10 @@ pub mod infrastructure {
         pub mod axum {
             pub mod axum_adapter;
             pub mod axum_route_adapter;
+        }
+
+        pub mod regex {
+            pub mod regex_adapter;
         }
     }
 
