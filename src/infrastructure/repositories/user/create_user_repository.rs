@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(
             user_database_error,
             UserDatabaseError::InsertError {
-                message: "Insert Error: Database error".to_string()
+                message: "insert Error: Database error".to_string()
             }
         );
     }
