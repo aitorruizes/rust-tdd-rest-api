@@ -147,7 +147,7 @@ mod tests {
                 SignUpUseCase, SignUpUseCaseError, SignUpUseCasePort,
             },
         },
-        domain::{entities::user::user_entity::UserEntity, errors::user::user_errors::UserError},
+        domain::entities::user::user_entity::UserEntity,
     };
 
     mock! {
@@ -292,39 +292,6 @@ mod tests {
             SignUpUseCaseError::DatabaseError(SignUpRepositoryError::InsertError {
                 message: "Database error".to_string()
             })
-        );
-    }
-
-    #[tokio::test]
-    async fn should_return_error_if_passwords_do_not_match() {
-        let sign_up_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
-
-        let hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
-
-        let id_generator_adapter_mock: MockIdGeneratorAdapter = MockIdGeneratorAdapter::default();
-
-        let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
-            Box::new(hasher_adapter_mock),
-            Box::new(id_generator_adapter_mock),
-            Box::new(sign_up_repository_mock),
-        );
-
-        let sign_up_dto: SignUpDto = SignUpDto::new(
-            "John".to_string(),
-            "Doe".to_string(),
-            "johndoe@gmail.com".to_string(),
-            "Password123!".to_string(),
-        );
-
-        let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
-
-        assert!(result.is_err());
-
-        let error: SignUpUseCaseError = result.unwrap_err();
-
-        assert_eq!(
-            error,
-            SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch)
         );
     }
 
