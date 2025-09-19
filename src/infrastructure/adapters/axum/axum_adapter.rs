@@ -1,11 +1,18 @@
-use axum::{Router, routing::get};
+use axum::Router;
 use tokio::net::TcpListener;
 
-use crate::application::ports::{
-    environment::environment_port::EnvironmentPort,
-    logger::logger_port::LoggerPort,
-    tcp_server::tcp_server_port::TcpServerPort,
-    web_framework::web_framework_port::{ServeFuture, WebFrameworkPort},
+use crate::{
+    application::ports::{
+        environment::environment_port::EnvironmentPort,
+        logger::logger_port::LoggerPort,
+        tcp_server::tcp_server_port::TcpServerPort,
+        web_framework::web_framework_port::{ServeFuture, WebFrameworkPort},
+    },
+    infrastructure::adapters::axum::axum_route_adapter::AxumRouteAdapter,
+    presentation::{
+        controllers::user::create_user_controller::CreateUserController,
+        ports::router::router_port::RouterPort, routers::core::core_router::CoreRouter,
+    },
 };
 
 pub struct AxumAdapter {
@@ -63,12 +70,26 @@ impl WebFrameworkPort for AxumAdapter {
 
             self.loggger_adapter.log_info(&server_started_message);
 
-            let app: Router = Router::new().route("/", get(|| async { "Hello, World!" }));
+            let axum_route_adapter: AxumRouteAdapter = AxumRouteAdapter;
+            let create_user_controller = CreateUserController;
 
-            axum::serve(tcp_listener, app).await.unwrap_or_else(|err| {
-                self.loggger_adapter.log_error(&err.to_string());
-                std::process::exit(1)
-            });
+            let core_router: CoreRouter = CoreRouter::new(
+                Box::new(axum_route_adapter),
+                Box::new(create_user_controller),
+            );
+
+            let axum_router = core_router
+                .register_routes()
+                .into_inner()
+                .downcast::<Router>()
+                .unwrap();
+
+            axum::serve(tcp_listener, axum_router)
+                .await
+                .unwrap_or_else(|err| {
+                    self.loggger_adapter.log_error(&err.to_string());
+                    std::process::exit(1)
+                });
 
             Ok(())
         })

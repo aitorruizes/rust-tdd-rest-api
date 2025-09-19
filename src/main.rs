@@ -90,6 +90,7 @@ pub mod infrastructure {
 
         pub mod axum {
             pub mod axum_adapter;
+            pub mod axum_route_adapter;
         }
     }
 
@@ -104,6 +105,37 @@ pub mod presentation {
     pub mod dtos {
         pub mod user {
             pub mod create_user_dto;
+        }
+
+        pub mod http {
+            pub mod http_request_dto;
+            pub mod http_response_dto;
+        }
+    }
+
+    pub mod controllers {
+        pub mod user {
+            pub mod create_user_controller;
+        }
+    }
+
+    pub mod ports {
+        pub mod controller {
+            pub mod controller_port;
+        }
+
+        pub mod router {
+            pub mod router_port;
+        }
+    }
+
+    pub mod routers {
+        pub mod auth {
+            pub mod auth_router;
+        }
+
+        pub mod core {
+            pub mod core_router;
         }
     }
 }

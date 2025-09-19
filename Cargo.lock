@@ -620,6 +620,8 @@ dependencies = [
  "bcrypt",
  "dotenvy",
  "mockall",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
