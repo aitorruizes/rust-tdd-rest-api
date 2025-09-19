@@ -1,3 +1,3 @@
 pub trait LoggerSubscriberPort {
-    fn initialize(self);
+    fn initialize(&self);
 }

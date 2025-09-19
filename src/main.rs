@@ -1,15 +1,4 @@
-use crate::{
-    application::ports::{
-        environment::environment_port::EnvironmentPort, logger::logger_port::LoggerPort,
-        logger_subscriber::logger_subsriber_port::LoggerSubscriberPort,
-        web_framework::web_framework_port::WebFrameworkPort,
-    },
-    infrastructure::adapters::{
-        axum::axum_adapter::AxumAdapter, dotenvy::dotenvy_adapter::DotenvyAdapter,
-        tokio::tokio_adapter::TokioAdapter, tracing::tracing_adapter::TracingAdapter,
-        tracing_subscriber::tracing_subscriber_adapter::TracingSubscriberAdapter,
-    },
-};
+use crate::infrastructure::boostrap::api::api_boostrap::{ApiBootstrap, ApiBootstrapPort};
 
 pub mod domain {
     pub mod entities {
@@ -103,6 +92,12 @@ pub mod infrastructure {
             pub mod axum_adapter;
         }
     }
+
+    pub mod boostrap {
+        pub mod api {
+            pub mod api_boostrap;
+        }
+    }
 }
 
 pub mod presentation {
@@ -115,25 +110,7 @@ pub mod presentation {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let tracing_subscriber_adapter: TracingSubscriberAdapter = TracingSubscriberAdapter;
+    let api_boostrap: ApiBootstrap = ApiBootstrap;
 
-    tracing_subscriber_adapter.initialize();
-
-    let tracing_adapter: TracingAdapter = TracingAdapter;
-    let dotenvy_adapter: DotenvyAdapter = DotenvyAdapter::new();
-
-    match dotenvy_adapter.load_environment_file() {
-        Ok(_) => tracing_adapter.log_info("Environment file successfully loaded."),
-        Err(err) => tracing_adapter.log_error(&err.to_string()),
-    };
-
-    let tokio_adapter: TokioAdapter = TokioAdapter;
-
-    let axum_adapter: AxumAdapter = AxumAdapter::new(
-        Box::new(tokio_adapter),
-        Box::new(tracing_adapter),
-        Box::new(dotenvy_adapter),
-    );
-
-    axum_adapter.serve().await
+    api_boostrap.setup().await
 }

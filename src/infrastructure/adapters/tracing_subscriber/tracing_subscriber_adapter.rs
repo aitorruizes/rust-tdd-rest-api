@@ -9,7 +9,7 @@ impl TracingSubscriberAdapter {
 }
 
 impl LoggerSubscriberPort for TracingSubscriberAdapter {
-    fn initialize(self) {
+    fn initialize(&self) {
         tracing_subscriber::fmt().init()
     }
 }

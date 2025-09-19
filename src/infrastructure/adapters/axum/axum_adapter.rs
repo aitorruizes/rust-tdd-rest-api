@@ -1,12 +1,11 @@
-use std::pin::Pin;
-
 use axum::{Router, routing::get};
 use tokio::net::TcpListener;
 
 use crate::application::ports::{
-    environment::environment_port::EnvironmentPort, logger::logger_port::LoggerPort,
+    environment::environment_port::EnvironmentPort,
+    logger::logger_port::LoggerPort,
     tcp_server::tcp_server_port::TcpServerPort,
-    web_framework::web_framework_port::WebFrameworkPort,
+    web_framework::web_framework_port::{ServeFuture, WebFrameworkPort},
 };
 
 pub struct AxumAdapter {
@@ -30,7 +29,7 @@ impl AxumAdapter {
 }
 
 impl WebFrameworkPort for AxumAdapter {
-    fn serve(&self) -> Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + '_>> {
+    fn serve(&self) -> ServeFuture<'_> {
         Box::pin(async move {
             let server_host: String = self
                 .environment_adapter
