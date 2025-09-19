@@ -3,39 +3,39 @@ use std::pin::Pin;
 use serde_json::{Value, json};
 
 use crate::{
-    application::use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
+    application::{
+        dtos::auth::sign_up_dto::SignUpDto,
+        use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
+    },
     infrastructure::adapters::regex::regex_adapter::{RegexAdapter, RegexError},
     presentation::{
-        controllers::user::create_user_validator::CreateUserValidator,
-        dtos::{
-            http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
-            user::create_user_dto::CreateUserDto,
-        },
+        controllers::auth::sign_up_validator::SignUpValidator,
+        dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
         ports::controller::controller_port::ControllerPort,
     },
 };
 
-pub struct CreateUserController {
-    create_user_validator: CreateUserValidator,
+pub struct SignUpController {
+    sign_up_validator: SignUpValidator,
     regex_adapter: RegexAdapter,
     sign_up_use_case: Box<dyn SignUpUseCasePort>,
 }
 
-impl CreateUserController {
+impl SignUpController {
     pub fn new(
-        create_user_validator: CreateUserValidator,
+        sign_up_validator: SignUpValidator,
         regex_adapter: RegexAdapter,
         sign_up_use_case: Box<dyn SignUpUseCasePort>,
     ) -> Self {
-        CreateUserController {
+        SignUpController {
             regex_adapter,
-            create_user_validator,
+            sign_up_validator,
             sign_up_use_case,
         }
     }
 }
 
-impl ControllerPort for CreateUserController {
+impl ControllerPort for SignUpController {
     fn handle(
         &self,
         http_request_dto: HttpRequestDto,
@@ -54,7 +54,7 @@ impl ControllerPort for CreateUserController {
                 }
             };
 
-            if let Err(errors) = self.create_user_validator.validate(body.clone()) {
+            if let Err(errors) = self.sign_up_validator.validate(body.clone()) {
                 return HttpResponseDto {
                     status_code: 400,
                     body: Some(json!({
@@ -149,7 +149,7 @@ impl ControllerPort for CreateUserController {
                 }
             }
 
-            let create_user_dto: CreateUserDto = CreateUserDto::new(
+            let sign_up_dto: SignUpDto = SignUpDto::new(
                 body["first_name"].as_str().unwrap().to_string(),
                 body["last_name"].as_str().unwrap().to_string(),
                 body["email"].as_str().unwrap().to_string(),
@@ -157,7 +157,7 @@ impl ControllerPort for CreateUserController {
                 body["password_confirmation"].as_str().unwrap().to_string(),
             );
 
-            if let Err(err) = self.sign_up_use_case.perform(create_user_dto).await {
+            if let Err(err) = self.sign_up_use_case.perform(sign_up_dto).await {
                 let (error_code, error_message) = match err {
                     SignUpUseCaseError::HasherError(e) => ("use_case_error", e.to_string()),
                     SignUpUseCaseError::UserError(e) => ("use_case_error", e.to_string()),
@@ -181,10 +181,10 @@ impl ControllerPort for CreateUserController {
     }
 }
 
-impl Clone for CreateUserController {
+impl Clone for SignUpController {
     fn clone(&self) -> Self {
         Self {
-            create_user_validator: self.create_user_validator.clone(),
+            sign_up_validator: self.sign_up_validator.clone(),
             regex_adapter: self.regex_adapter.clone(),
             sign_up_use_case: self.sign_up_use_case.clone_box(),
         }

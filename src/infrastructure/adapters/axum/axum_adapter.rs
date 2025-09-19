@@ -21,9 +21,8 @@ use crate::{
         repositories::auth::sign_up_repository::SignUpRepository,
     },
     presentation::{
-        controllers::user::{
-            create_user_controller::CreateUserController,
-            create_user_validator::CreateUserValidator,
+        controllers::auth::{
+            sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
         },
         ports::router::router_port::RouterPort,
         routers::core::core_router::CoreRouter,
@@ -103,19 +102,15 @@ impl AxumAdapter {
                 sign_up_repository,
             ));
 
-            let create_user_validator: CreateUserValidator = CreateUserValidator;
+            let sign_up_validator: SignUpValidator = SignUpValidator;
             let pattern_matching: RegexAdapter = RegexAdapter;
 
-            let create_user_controller: CreateUserController = CreateUserController::new(
-                create_user_validator,
-                pattern_matching,
-                sign_up_use_case,
-            );
+            let sign_up_controller: SignUpController =
+                SignUpController::new(sign_up_validator, pattern_matching, sign_up_use_case);
 
             let axum_route_adapter: AxumRouteAdapter = AxumRouteAdapter;
 
-            let core_router: CoreRouter =
-                CoreRouter::new(axum_route_adapter, create_user_controller);
+            let core_router: CoreRouter = CoreRouter::new(axum_route_adapter, sign_up_controller);
 
             let axum_router: Router = core_router.register_routes();
 

@@ -1,11 +1,11 @@
 use serde_json::{Value, json};
 
 #[derive(Clone)]
-pub struct CreateUserValidator;
+pub struct SignUpValidator;
 
-impl CreateUserValidator {
+impl SignUpValidator {
     pub fn new() -> Self {
-        CreateUserValidator
+        SignUpValidator
     }
 
     pub fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
@@ -85,7 +85,7 @@ impl CreateUserValidator {
     }
 }
 
-impl Default for CreateUserValidator {
+impl Default for SignUpValidator {
     fn default() -> Self {
         Self::new()
     }

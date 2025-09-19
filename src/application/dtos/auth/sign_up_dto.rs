@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct CreateUserDto {
+pub struct SignUpDto {
     pub id: Option<String>,
     pub first_name: String,
     pub last_name: String,
@@ -10,7 +10,7 @@ pub struct CreateUserDto {
     pub password_confirmation: String,
 }
 
-impl CreateUserDto {
+impl SignUpDto {
     pub fn new(
         first_name: String,
         last_name: String,

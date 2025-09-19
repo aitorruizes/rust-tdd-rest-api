@@ -1,15 +1,17 @@
 use std::pin::Pin;
 
 use crate::{
-    application::ports::{
-        auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
-        hasher::hasher_port::{HasherError, HasherPort},
-        id_generator::id_generator_port::IdGeneratorPort,
+    application::{
+        dtos::auth::sign_up_dto::SignUpDto,
+        ports::{
+            auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
+            hasher::hasher_port::{HasherError, HasherPort},
+            id_generator::id_generator_port::IdGeneratorPort,
+        },
     },
     domain::{
         entities::user::user_entity::UserEntityBuilder, errors::user::user_errors::UserError,
     },
-    presentation::dtos::user::create_user_dto::CreateUserDto,
 };
 
 #[derive(Debug, PartialEq)]
@@ -42,7 +44,7 @@ impl std::error::Error for SignUpUseCaseError {
 pub trait SignUpUseCasePort: SignUpUseCasePortClone + Send + Sync {
     fn perform(
         &self,
-        create_user_dto: CreateUserDto,
+        sign_up_dto: SignUpDto,
     ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>>;
 }
 
@@ -88,10 +90,10 @@ impl SignUpUseCase {
 impl SignUpUseCasePort for SignUpUseCase {
     fn perform(
         &self,
-        create_user_dto: CreateUserDto,
+        sign_up_dto: SignUpDto,
     ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>> {
         Box::pin(async move {
-            if create_user_dto.password != create_user_dto.password_confirmation {
+            if sign_up_dto.password != sign_up_dto.password_confirmation {
                 return Err(SignUpUseCaseError::UserError(
                     UserError::PasswordsDoNotMatch,
                 ));
@@ -99,16 +101,16 @@ impl SignUpUseCasePort for SignUpUseCase {
 
             let hashed_password = self
                 .hasher_adapter
-                .hash(create_user_dto.password.as_str())
+                .hash(sign_up_dto.password.as_str())
                 .map_err(SignUpUseCaseError::HasherError)?;
 
             let generated_id: String = self.id_generator_adapter.generate_id();
 
             let user_entity = UserEntityBuilder::default()
                 .id(generated_id)
-                .first_name(create_user_dto.first_name)
-                .last_name(create_user_dto.last_name)
-                .email(create_user_dto.email)
+                .first_name(sign_up_dto.first_name)
+                .last_name(sign_up_dto.last_name)
+                .email(sign_up_dto.email)
                 .password(hashed_password)
                 .build();
 
@@ -140,6 +142,7 @@ mod tests {
     use mockall::mock;
 
     use crate::{
+        application::dtos::auth::sign_up_dto::SignUpDto,
         application::{
             ports::{
                 auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
@@ -151,7 +154,6 @@ mod tests {
             },
         },
         domain::{entities::user::user_entity::UserEntity, errors::user::user_errors::UserError},
-        presentation::dtos::user::create_user_dto::CreateUserDto,
     };
 
     mock! {
@@ -201,10 +203,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_succecssfully_execute_create_user_repository() {
-        let mut create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
+    async fn should_succecssfully_execute_sign_up_repository() {
+        let mut sign_up_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
-        create_user_repository_mock
+        sign_up_repository_mock
             .expect_execute()
             .times(1)
             .returning(|_| Box::pin(async move { Ok(()) }));
@@ -224,13 +226,13 @@ mod tests {
             .times(1)
             .returning(|| "generated_id".to_string());
 
-        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
+        let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
-            Box::new(create_user_repository_mock),
+            Box::new(sign_up_repository_mock),
         );
 
-        let create_user_dto: CreateUserDto = CreateUserDto::new(
+        let sign_up_dto: SignUpDto = SignUpDto::new(
             "John".to_string(),
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
@@ -238,17 +240,16 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), SignUpUseCaseError> =
-            create_user_use_case.perform(create_user_dto).await;
+        let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
 
         assert!(result.is_ok());
     }
 
     #[tokio::test]
-    async fn should_return_error_if_create_user_repository_fails() {
-        let mut create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
+    async fn should_return_error_if_sign_up_repository_fails() {
+        let mut sign_up_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
-        create_user_repository_mock
+        sign_up_repository_mock
             .expect_execute()
             .times(1)
             .returning(|_| {
@@ -274,13 +275,13 @@ mod tests {
             .times(1)
             .returning(|| "generated_id".to_string());
 
-        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
+        let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
-            Box::new(create_user_repository_mock),
+            Box::new(sign_up_repository_mock),
         );
 
-        let create_user_dto: CreateUserDto = CreateUserDto::new(
+        let sign_up_dto: SignUpDto = SignUpDto::new(
             "John".to_string(),
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
@@ -288,8 +289,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), SignUpUseCaseError> =
-            create_user_use_case.perform(create_user_dto).await;
+        let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
 
         assert!(result.is_err());
 
@@ -305,19 +305,19 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_passwords_do_not_match() {
-        let create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
+        let sign_up_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         let hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
 
         let id_generator_adapter_mock: MockIdGeneratorAdapter = MockIdGeneratorAdapter::default();
 
-        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
+        let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
-            Box::new(create_user_repository_mock),
+            Box::new(sign_up_repository_mock),
         );
 
-        let create_user_dto: CreateUserDto = CreateUserDto::new(
+        let sign_up_dto: SignUpDto = SignUpDto::new(
             "John".to_string(),
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
@@ -325,8 +325,7 @@ mod tests {
             "Password1234!".to_string(),
         );
 
-        let result: Result<(), SignUpUseCaseError> =
-            create_user_use_case.perform(create_user_dto).await;
+        let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
 
         assert!(result.is_err());
 
@@ -340,7 +339,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_password_hash_fails() {
-        let create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
+        let sign_up_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         let mut hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
 
@@ -352,13 +351,13 @@ mod tests {
 
         let id_generator_adapter_mock: MockIdGeneratorAdapter = MockIdGeneratorAdapter::default();
 
-        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
+        let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
-            Box::new(create_user_repository_mock),
+            Box::new(sign_up_repository_mock),
         );
 
-        let create_user_dto: CreateUserDto = CreateUserDto::new(
+        let sign_up_dto: SignUpDto = SignUpDto::new(
             "John".to_string(),
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
@@ -366,8 +365,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), SignUpUseCaseError> =
-            create_user_use_case.perform(create_user_dto).await;
+        let result: Result<(), SignUpUseCaseError> = sign_up_use_case.perform(sign_up_dto).await;
 
         assert!(result.is_err());
 

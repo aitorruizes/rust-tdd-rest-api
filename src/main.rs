@@ -38,6 +38,12 @@ pub mod application {
             pub mod sign_up_use_case;
         }
     }
+
+    pub mod dtos {
+        pub mod auth {
+            pub mod sign_up_dto;
+        }
+    }
 }
 
 pub mod infrastructure {
@@ -97,10 +103,6 @@ pub mod infrastructure {
 
 pub mod presentation {
     pub mod dtos {
-        pub mod user {
-            pub mod create_user_dto;
-        }
-
         pub mod http {
             pub mod http_request_dto;
             pub mod http_response_dto;
@@ -108,9 +110,9 @@ pub mod presentation {
     }
 
     pub mod controllers {
-        pub mod user {
-            pub mod create_user_controller;
-            pub mod create_user_validator;
+        pub mod auth {
+            pub mod sign_up_controller;
+            pub mod sign_up_validator;
         }
     }
 
