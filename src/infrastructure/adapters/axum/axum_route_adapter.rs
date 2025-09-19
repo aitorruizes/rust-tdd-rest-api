@@ -7,27 +7,12 @@ use axum::{
 };
 
 use serde_json::Value;
-use std::{any::Any, collections::HashMap};
+use std::collections::HashMap;
 
-use crate::{
-    application::ports::web_framework::web_framework_port::{
-        RouterMethod, RouterWrapper, WebFrameworkRoutePort,
-    },
-    presentation::{
-        dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
-        ports::controller::controller_port::ControllerPort,
-    },
+use crate::presentation::{
+    dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
+    ports::controller::controller_port::ControllerPort,
 };
-
-pub struct AxumRouterWrapper {
-    router: Router<()>,
-}
-
-impl RouterWrapper for AxumRouterWrapper {
-    fn into_inner(self: Box<Self>) -> Box<dyn Any + Send + Sync> {
-        Box::new(self.router)
-    }
-}
 
 #[derive(Clone)]
 pub struct ControllerWrapper {
@@ -111,19 +96,17 @@ impl AxumRouteAdapter {
     pub fn new() -> Self {
         AxumRouteAdapter
     }
-}
 
-impl WebFrameworkRoutePort for AxumRouteAdapter {
-    fn create_router(
+    pub fn create_router(
         &self,
-        router_method: RouterMethod,
+        method: Method,
         path: &str,
         controller: Box<dyn ControllerPort>,
-    ) -> Box<dyn RouterWrapper> {
+    ) -> Router {
         let controller_wrapper: ControllerWrapper = ControllerWrapper::new(controller);
 
-        let router: Router<()> = match router_method {
-            RouterMethod::Get => {
+        let router: Router<()> = match method {
+            Method::GET => {
                 let controller = controller_wrapper.clone();
 
                 Router::new().route(
@@ -135,7 +118,7 @@ impl WebFrameworkRoutePort for AxumRouteAdapter {
                     ),
                 )
             }
-            RouterMethod::Post => {
+            Method::POST => {
                 let controller = controller_wrapper.clone();
 
                 Router::new().route(
@@ -147,7 +130,7 @@ impl WebFrameworkRoutePort for AxumRouteAdapter {
                     ),
                 )
             }
-            RouterMethod::Put => {
+            Method::PUT => {
                 let controller = controller_wrapper.clone();
 
                 Router::new().route(
@@ -159,7 +142,7 @@ impl WebFrameworkRoutePort for AxumRouteAdapter {
                     ),
                 )
             }
-            RouterMethod::Patch => {
+            Method::PATCH => {
                 let controller = controller_wrapper.clone();
 
                 Router::new().route(
@@ -171,7 +154,7 @@ impl WebFrameworkRoutePort for AxumRouteAdapter {
                     ),
                 )
             }
-            RouterMethod::Delete => {
+            Method::DELETE => {
                 let controller = controller_wrapper.clone();
 
                 Router::new().route(
@@ -183,46 +166,20 @@ impl WebFrameworkRoutePort for AxumRouteAdapter {
                     ),
                 )
             }
+            _ => Router::new(),
         };
 
-        Box::new(AxumRouterWrapper { router })
+        router
     }
 
-    fn merge_router(
-        &self,
-        router: Box<dyn RouterWrapper>,
-        router_to_merge: Box<dyn RouterWrapper>,
-    ) -> Box<dyn RouterWrapper> {
-        let merged_router: Router<()> =
-            router.into_inner().downcast::<Router<()>>().unwrap().merge(
-                *router_to_merge
-                    .into_inner()
-                    .downcast::<Router<()>>()
-                    .unwrap(),
-            );
-
-        Box::new(AxumRouterWrapper {
-            router: merged_router,
-        })
+    pub fn merge_router(&self, router: Router, router_to_merge: Router) -> Router {
+        router.merge(router_to_merge)
     }
 
-    fn create_core_router(
-        &self,
-        path: &str,
-        router_to_merge: Box<dyn RouterWrapper>,
-    ) -> Box<dyn RouterWrapper> {
-        let nested_router: Router = *router_to_merge
-            .into_inner()
-            .downcast::<Router<()>>()
-            .unwrap();
-
-        let core_router: Router = Router::new()
-            .nest(path, nested_router)
-            .fallback(|| async { (StatusCode::NOT_FOUND, "Route not found") });
-
-        Box::new(AxumRouterWrapper {
-            router: core_router,
-        })
+    pub fn create_core_router(&self, path: &str, router_to_merge: Router) -> Router {
+        Router::new()
+            .nest(path, router_to_merge)
+            .fallback(|| async { (StatusCode::NOT_FOUND, "Router not found") })
     }
 }
 

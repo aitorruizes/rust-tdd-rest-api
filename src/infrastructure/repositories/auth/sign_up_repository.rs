@@ -3,32 +3,32 @@ use std::pin::Pin;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::ports::database::user_database_port::{UserDatabaseError, UserDatabasePort},
+    application::ports::auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
     domain::entities::user::user_entity::UserEntity,
 };
 
 #[derive(Clone)]
-pub struct UserDatabaseGateway {
+pub struct SignUpRepository {
     database_pool: Pool<Postgres>,
 }
 
-impl UserDatabaseGateway {
+impl SignUpRepository {
     pub fn new(database_pool: Pool<Postgres>) -> Self {
-        UserDatabaseGateway { database_pool }
+        SignUpRepository { database_pool }
     }
 }
 
-impl UserDatabasePort for UserDatabaseGateway {
-    fn insert_user(
+impl SignUpRepositoryPort for SignUpRepository {
+    fn execute(
         &self,
         user_entity: UserEntity,
-    ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpRepositoryError>> + Send + '_>> {
         Box::pin(async move {
             sqlx::query!(
                 r#"
-            INSERT INTO users (id, first_name, last_name, e_mail, password)
-            VALUES ($1, $2, $3, $4, $5)
-            "#,
+                INSERT INTO users (id, first_name, last_name, e_mail, password)
+                VALUES ($1, $2, $3, $4, $5)
+                "#,
                 uuid::Uuid::parse_str(&user_entity.id).unwrap(),
                 user_entity.first_name,
                 user_entity.last_name,
@@ -37,7 +37,7 @@ impl UserDatabasePort for UserDatabaseGateway {
             )
             .execute(&self.database_pool)
             .await
-            .map_err(|err| UserDatabaseError::InsertError {
+            .map_err(|err| SignUpRepositoryError::InsertError {
                 message: err.to_string(),
             })?;
 

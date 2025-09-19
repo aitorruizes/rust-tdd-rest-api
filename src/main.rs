@@ -18,7 +18,6 @@ pub mod application {
     pub mod ports {
         pub mod database {
             pub mod database_port;
-            pub mod user_database_port;
         }
 
         pub mod hasher {
@@ -29,46 +28,22 @@ pub mod application {
             pub mod id_generator_port;
         }
 
-        pub mod logger {
-            pub mod logger_port;
-        }
-
-        pub mod logger_subscriber {
-            pub mod logger_subsriber_port;
-        }
-
-        pub mod tcp_server {
-            pub mod tcp_server_port;
-        }
-
-        pub mod environment {
-            pub mod environment_port;
-        }
-
-        pub mod web_framework {
-            pub mod web_framework_port;
-        }
-
-        pub mod validator {
-            pub mod validator_port;
-        }
-
-        pub mod pattern_matching {
-            pub mod pattern_matching_port;
+        pub mod auth {
+            pub mod sign_up_repository;
         }
     }
 
     pub mod use_cases {
-        pub mod user {
-            pub mod create_user_use_case;
+        pub mod auth {
+            pub mod sign_up_use_case;
         }
     }
 }
 
 pub mod infrastructure {
     pub mod repositories {
-        pub mod user {
-            pub mod create_user_repository;
+        pub mod auth {
+            pub mod sign_up_repository;
         }
     }
 
@@ -110,7 +85,6 @@ pub mod infrastructure {
     pub mod gateways {
         pub mod database {
             pub mod database_gateway;
-            pub mod user_database_gateway;
         }
     }
 

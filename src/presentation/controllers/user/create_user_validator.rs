@@ -1,7 +1,5 @@
 use serde_json::{Value, json};
 
-use crate::application::ports::validator::validator_port::ValidatorPort;
-
 #[derive(Clone)]
 pub struct CreateUserValidator;
 
@@ -9,10 +7,8 @@ impl CreateUserValidator {
     pub fn new() -> Self {
         CreateUserValidator
     }
-}
 
-impl ValidatorPort for CreateUserValidator {
-    fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
+    pub fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
         let mut errors: Vec<Value> = Vec::new();
 
         match fields.get("first_name") {

@@ -1,35 +1,36 @@
+use axum::{Router, http::Method};
+
 use crate::{
-    application::ports::web_framework::web_framework_port::{
-        RouterMethod, RouterWrapper, WebFrameworkRoutePort,
-    },
-    presentation::ports::{
-        controller::controller_port::ControllerPort, router::router_port::RouterPort,
+    infrastructure::adapters::axum::axum_route_adapter::AxumRouteAdapter,
+    presentation::{
+        controllers::user::create_user_controller::CreateUserController,
+        ports::router::router_port::RouterPort,
     },
 };
 
 pub struct AuthRouter {
-    web_framework_route_adapter: Box<dyn WebFrameworkRoutePort>,
-    create_user_controller: Box<dyn ControllerPort>,
+    axum_route_adapter: AxumRouteAdapter,
+    create_user_controller: CreateUserController,
 }
 
 impl AuthRouter {
     pub fn new(
-        web_framework_route_adapter: Box<dyn WebFrameworkRoutePort>,
-        create_user_controller: Box<dyn ControllerPort>,
+        axum_route_adapter: AxumRouteAdapter,
+        create_user_controller: CreateUserController,
     ) -> Self {
         AuthRouter {
-            web_framework_route_adapter,
+            axum_route_adapter,
             create_user_controller,
         }
     }
 }
 
 impl RouterPort for AuthRouter {
-    fn register_routes(self) -> Box<dyn RouterWrapper> {
-        self.web_framework_route_adapter.create_router(
-            RouterMethod::Post,
+    fn register_routes(self) -> Router {
+        self.axum_route_adapter.create_router(
+            Method::POST,
             "/auth/sign-up",
-            self.create_user_controller,
+            Box::new(self.create_user_controller),
         )
     }
 }

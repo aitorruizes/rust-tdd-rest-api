@@ -3,14 +3,10 @@ use std::pin::Pin;
 use serde_json::{Value, json};
 
 use crate::{
-    application::{
-        ports::{
-            pattern_matching::pattern_matching_port::{PatternMatchingError, PatternMatchingPort},
-            validator::validator_port::ValidatorPort,
-        },
-        use_cases::user::create_user_use_case::{CreateUserUseCaseError, CreateUserUseCasePort},
-    },
+    application::use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
+    infrastructure::adapters::regex::regex_adapter::{RegexAdapter, RegexError},
     presentation::{
+        controllers::user::create_user_validator::CreateUserValidator,
         dtos::{
             http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
             user::create_user_dto::CreateUserDto,
@@ -20,21 +16,21 @@ use crate::{
 };
 
 pub struct CreateUserController {
-    create_user_validator: Box<dyn ValidatorPort>,
-    pattern_matching_adapter: Box<dyn PatternMatchingPort>,
-    create_user_use_case: Box<dyn CreateUserUseCasePort>,
+    create_user_validator: CreateUserValidator,
+    regex_adapter: RegexAdapter,
+    sign_up_use_case: Box<dyn SignUpUseCasePort>,
 }
 
 impl CreateUserController {
     pub fn new(
-        create_user_validator: Box<dyn ValidatorPort>,
-        pattern_matching_adapter: Box<dyn PatternMatchingPort>,
-        create_user_use_case: Box<dyn CreateUserUseCasePort>,
+        create_user_validator: CreateUserValidator,
+        regex_adapter: RegexAdapter,
+        sign_up_use_case: Box<dyn SignUpUseCasePort>,
     ) -> Self {
         CreateUserController {
-            pattern_matching_adapter,
+            regex_adapter,
             create_user_validator,
-            create_user_use_case,
+            sign_up_use_case,
         }
     }
 }
@@ -69,8 +65,8 @@ impl ControllerPort for CreateUserController {
                 };
             }
 
-            let is_valid_email: Result<bool, PatternMatchingError> = self
-                .pattern_matching_adapter
+            let is_valid_email: Result<bool, RegexError> = self
+                .regex_adapter
                 .is_valid_email(body["email"].as_str().unwrap());
 
             match is_valid_email {
@@ -81,7 +77,7 @@ impl ControllerPort for CreateUserController {
                             status_code: 400,
                             body: Some(json!({
                                 "error_code": "invalid_email",
-                                "error_message": PatternMatchingError::InvalidEmail.to_string(),
+                                "error_message": RegexError::InvalidEmail.to_string(),
                             })),
                         };
                     }
@@ -97,8 +93,8 @@ impl ControllerPort for CreateUserController {
                 }
             }
 
-            let is_valid_email_domain: Result<bool, PatternMatchingError> = self
-                .pattern_matching_adapter
+            let is_valid_email_domain: Result<bool, RegexError> = self
+                .regex_adapter
                 .is_valid_email_domain(body["email"].as_str().unwrap());
 
             match is_valid_email_domain {
@@ -109,7 +105,7 @@ impl ControllerPort for CreateUserController {
                             status_code: 400,
                             body: Some(json!({
                                 "error_code": "invalid_email_domain",
-                                "error_message": PatternMatchingError::InvalidEmailDomain.to_string(),
+                                "error_message": RegexError::InvalidEmailDomain.to_string(),
                             })),
                         };
                     }
@@ -125,8 +121,8 @@ impl ControllerPort for CreateUserController {
                 }
             }
 
-            let is_valid_password: Result<bool, PatternMatchingError> = self
-                .pattern_matching_adapter
+            let is_valid_password: Result<bool, RegexError> = self
+                .regex_adapter
                 .is_valid_password(body["password"].as_str().unwrap());
 
             match is_valid_password {
@@ -137,7 +133,7 @@ impl ControllerPort for CreateUserController {
                             status_code: 400,
                             body: Some(json!({
                                 "error_code": "invalid_password",
-                                "error_message": PatternMatchingError::InvalidPassword.to_string(),
+                                "error_message": RegexError::InvalidPassword.to_string(),
                             })),
                         };
                     }
@@ -161,11 +157,11 @@ impl ControllerPort for CreateUserController {
                 body["password_confirmation"].as_str().unwrap().to_string(),
             );
 
-            if let Err(err) = self.create_user_use_case.perform(create_user_dto).await {
+            if let Err(err) = self.sign_up_use_case.perform(create_user_dto).await {
                 let (error_code, error_message) = match err {
-                    CreateUserUseCaseError::HasherError(e) => ("use_case_error", e.to_string()),
-                    CreateUserUseCaseError::UserError(e) => ("use_case_error", e.to_string()),
-                    CreateUserUseCaseError::DatabaseError(e) => ("repository_error", e.to_string()),
+                    SignUpUseCaseError::HasherError(e) => ("use_case_error", e.to_string()),
+                    SignUpUseCaseError::UserError(e) => ("use_case_error", e.to_string()),
+                    SignUpUseCaseError::DatabaseError(e) => ("repository_error", e.to_string()),
                 };
 
                 return HttpResponseDto {
@@ -188,9 +184,9 @@ impl ControllerPort for CreateUserController {
 impl Clone for CreateUserController {
     fn clone(&self) -> Self {
         Self {
-            create_user_validator: self.create_user_validator.clone_box(),
-            pattern_matching_adapter: self.pattern_matching_adapter.clone_box(),
-            create_user_use_case: self.create_user_use_case.clone_box(),
+            create_user_validator: self.create_user_validator.clone(),
+            regex_adapter: self.regex_adapter.clone(),
+            sign_up_use_case: self.sign_up_use_case.clone_box(),
         }
     }
 }

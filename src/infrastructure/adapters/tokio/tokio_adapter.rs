@@ -1,7 +1,20 @@
 use std::pin::Pin;
 use tokio::net::TcpListener;
 
-use crate::application::ports::tcp_server::tcp_server_port::{TcpServerError, TcpServerPort};
+#[derive(Debug)]
+pub enum TcpServerError {
+    ListenerCreationError { message: String },
+}
+
+impl std::fmt::Display for TcpServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TcpServerError::ListenerCreationError { message } => {
+                write!(f, "An error occurred while creating listener: {}.", message)
+            }
+        }
+    }
+}
 
 pub struct TokioAdapter;
 
@@ -9,10 +22,8 @@ impl TokioAdapter {
     pub fn new() -> Self {
         TokioAdapter
     }
-}
 
-impl TcpServerPort for TokioAdapter {
-    fn create_listener(
+    pub fn create_listener(
         &self,
         server_address: String,
     ) -> Pin<Box<dyn Future<Output = Result<TcpListener, TcpServerError>>>> {

@@ -2,98 +2,97 @@ use std::pin::Pin;
 
 use crate::{
     application::ports::{
-        database::user_database_port::UserDatabaseError,
+        auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
         hasher::hasher_port::{HasherError, HasherPort},
         id_generator::id_generator_port::IdGeneratorPort,
     },
     domain::{
         entities::user::user_entity::UserEntityBuilder, errors::user::user_errors::UserError,
     },
-    infrastructure::repositories::user::create_user_repository::CreateUserRepositoryPort,
     presentation::dtos::user::create_user_dto::CreateUserDto,
 };
 
 #[derive(Debug, PartialEq)]
-pub enum CreateUserUseCaseError {
+pub enum SignUpUseCaseError {
     HasherError(HasherError),
     UserError(UserError),
-    DatabaseError(UserDatabaseError),
+    DatabaseError(SignUpRepositoryError),
 }
 
-impl std::fmt::Display for CreateUserUseCaseError {
+impl std::fmt::Display for SignUpUseCaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CreateUserUseCaseError::HasherError(e) => write!(f, "{}", e),
-            CreateUserUseCaseError::UserError(e) => write!(f, "{}", e),
-            CreateUserUseCaseError::DatabaseError(e) => write!(f, "{}", e),
+            SignUpUseCaseError::HasherError(e) => write!(f, "{}", e),
+            SignUpUseCaseError::UserError(e) => write!(f, "{}", e),
+            SignUpUseCaseError::DatabaseError(e) => write!(f, "{}", e),
         }
     }
 }
 
-impl std::error::Error for CreateUserUseCaseError {
+impl std::error::Error for SignUpUseCaseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            CreateUserUseCaseError::HasherError(e) => Some(e),
-            CreateUserUseCaseError::UserError(e) => Some(e),
-            CreateUserUseCaseError::DatabaseError(e) => Some(e),
+            SignUpUseCaseError::HasherError(e) => Some(e),
+            SignUpUseCaseError::UserError(e) => Some(e),
+            SignUpUseCaseError::DatabaseError(e) => Some(e),
         }
     }
 }
 
-pub trait CreateUserUseCasePort: CreateUserUseCasePortClone + Send + Sync {
+pub trait SignUpUseCasePort: SignUpUseCasePortClone + Send + Sync {
     fn perform(
         &self,
         create_user_dto: CreateUserDto,
-    ) -> Pin<Box<dyn Future<Output = Result<(), CreateUserUseCaseError>> + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>>;
 }
 
-pub trait CreateUserUseCasePortClone {
-    fn clone_box(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync>;
+pub trait SignUpUseCasePortClone {
+    fn clone_box(&self) -> Box<dyn SignUpUseCasePort + Send + Sync>;
 }
 
-impl<T> CreateUserUseCasePortClone for T
+impl<T> SignUpUseCasePortClone for T
 where
-    T: CreateUserUseCasePort + Clone + Send + Sync + 'static,
+    T: SignUpUseCasePort + Clone + Send + Sync + 'static,
 {
-    fn clone_box(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync> {
+    fn clone_box(&self) -> Box<dyn SignUpUseCasePort + Send + Sync> {
         Box::new(self.clone())
     }
 }
 
-impl Clone for Box<dyn CreateUserUseCasePort + Send + Sync> {
-    fn clone(&self) -> Box<dyn CreateUserUseCasePort + Send + Sync> {
+impl Clone for Box<dyn SignUpUseCasePort + Send + Sync> {
+    fn clone(&self) -> Box<dyn SignUpUseCasePort + Send + Sync> {
         self.as_ref().clone_box()
     }
 }
 
-pub struct CreateUserUseCase {
+pub struct SignUpUseCase {
     hasher_adapter: Box<dyn HasherPort>,
     id_generator_adapter: Box<dyn IdGeneratorPort>,
-    create_user_repository: Box<dyn CreateUserRepositoryPort>,
+    sign_up_repository: Box<dyn SignUpRepositoryPort>,
 }
 
-impl CreateUserUseCase {
+impl SignUpUseCase {
     pub fn new(
         hasher_adapter: Box<dyn HasherPort>,
         id_generator_adapter: Box<dyn IdGeneratorPort>,
-        create_user_repository: Box<dyn CreateUserRepositoryPort>,
+        sign_up_repository: Box<dyn SignUpRepositoryPort>,
     ) -> Self {
         Self {
             hasher_adapter,
             id_generator_adapter,
-            create_user_repository,
+            sign_up_repository,
         }
     }
 }
 
-impl CreateUserUseCasePort for CreateUserUseCase {
+impl SignUpUseCasePort for SignUpUseCase {
     fn perform(
         &self,
         create_user_dto: CreateUserDto,
-    ) -> Pin<Box<dyn Future<Output = Result<(), CreateUserUseCaseError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>> {
         Box::pin(async move {
             if create_user_dto.password != create_user_dto.password_confirmation {
-                return Err(CreateUserUseCaseError::UserError(
+                return Err(SignUpUseCaseError::UserError(
                     UserError::PasswordsDoNotMatch,
                 ));
             }
@@ -101,7 +100,7 @@ impl CreateUserUseCasePort for CreateUserUseCase {
             let hashed_password = self
                 .hasher_adapter
                 .hash(create_user_dto.password.as_str())
-                .map_err(CreateUserUseCaseError::HasherError)?;
+                .map_err(SignUpUseCaseError::HasherError)?;
 
             let generated_id: String = self.id_generator_adapter.generate_id();
 
@@ -113,23 +112,23 @@ impl CreateUserUseCasePort for CreateUserUseCase {
                 .password(hashed_password)
                 .build();
 
-            self.create_user_repository
+            self.sign_up_repository
                 .as_ref()
                 .execute(user_entity)
                 .await
-                .map_err(CreateUserUseCaseError::DatabaseError)?;
+                .map_err(SignUpUseCaseError::DatabaseError)?;
 
             Ok(())
         })
     }
 }
 
-impl Clone for CreateUserUseCase {
+impl Clone for SignUpUseCase {
     fn clone(&self) -> Self {
         Self {
             hasher_adapter: self.hasher_adapter.clone_box(),
             id_generator_adapter: self.id_generator_adapter.clone_box(),
-            create_user_repository: self.create_user_repository.clone_box(),
+            sign_up_repository: self.sign_up_repository.clone_box(),
         }
     }
 }
@@ -143,32 +142,31 @@ mod tests {
     use crate::{
         application::{
             ports::{
-                database::user_database_port::UserDatabaseError,
+                auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
                 hasher::hasher_port::{HasherError, HasherPort},
                 id_generator::id_generator_port::IdGeneratorPort,
             },
-            use_cases::user::create_user_use_case::{
-                CreateUserUseCase, CreateUserUseCaseError, CreateUserUseCasePort,
+            use_cases::auth::sign_up_use_case::{
+                SignUpUseCase, SignUpUseCaseError, SignUpUseCasePort,
             },
         },
         domain::{entities::user::user_entity::UserEntity, errors::user::user_errors::UserError},
-        infrastructure::repositories::user::create_user_repository::CreateUserRepositoryPort,
         presentation::dtos::user::create_user_dto::CreateUserDto,
     };
 
     mock! {
-        pub CreateUserRepository {}
+        pub SignUpRepository {}
 
-        impl CreateUserRepositoryPort for CreateUserRepository {
+        impl SignUpRepositoryPort for SignUpRepository {
             fn execute(
                 &self,
                 user_entity: UserEntity,
-            ) -> Pin<Box<dyn Future<Output = Result<(), UserDatabaseError>> + Send + 'static>>;
+            ) -> Pin<Box<dyn Future<Output = Result<(), SignUpRepositoryError>> + Send + 'static>>;
         }
 
-        impl Clone for CreateUserRepository {
+        impl Clone for SignUpRepository {
             fn clone(&self) -> Self {
-                MockCreateUserRepository::new()
+                MockSignUpRepository::new()
             }
         }
     }
@@ -204,8 +202,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_succecssfully_execute_create_user_repository() {
-        let mut create_user_repository_mock: MockCreateUserRepository =
-            MockCreateUserRepository::default();
+        let mut create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         create_user_repository_mock
             .expect_execute()
@@ -227,7 +224,7 @@ mod tests {
             .times(1)
             .returning(|| "generated_id".to_string());
 
-        let create_user_use_case: CreateUserUseCase = CreateUserUseCase::new(
+        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
             Box::new(create_user_repository_mock),
@@ -241,7 +238,7 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), CreateUserUseCaseError> =
+        let result: Result<(), SignUpUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_ok());
@@ -249,15 +246,14 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_create_user_repository_fails() {
-        let mut create_user_repository_mock: MockCreateUserRepository =
-            MockCreateUserRepository::default();
+        let mut create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         create_user_repository_mock
             .expect_execute()
             .times(1)
             .returning(|_| {
                 Box::pin(async move {
-                    Err(UserDatabaseError::InsertError {
+                    Err(SignUpRepositoryError::InsertError {
                         message: "Database error".to_string(),
                     })
                 })
@@ -278,7 +274,7 @@ mod tests {
             .times(1)
             .returning(|| "generated_id".to_string());
 
-        let create_user_use_case: CreateUserUseCase = CreateUserUseCase::new(
+        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
             Box::new(create_user_repository_mock),
@@ -292,16 +288,16 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), CreateUserUseCaseError> =
+        let result: Result<(), SignUpUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());
 
-        let error: CreateUserUseCaseError = result.unwrap_err();
+        let error: SignUpUseCaseError = result.unwrap_err();
 
         assert_eq!(
             error,
-            CreateUserUseCaseError::DatabaseError(UserDatabaseError::InsertError {
+            SignUpUseCaseError::DatabaseError(SignUpRepositoryError::InsertError {
                 message: "Database error".to_string()
             })
         );
@@ -309,14 +305,13 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_passwords_do_not_match() {
-        let create_user_repository_mock: MockCreateUserRepository =
-            MockCreateUserRepository::default();
+        let create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         let hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
 
         let id_generator_adapter_mock: MockIdGeneratorAdapter = MockIdGeneratorAdapter::default();
 
-        let create_user_use_case: CreateUserUseCase = CreateUserUseCase::new(
+        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
             Box::new(create_user_repository_mock),
@@ -330,23 +325,22 @@ mod tests {
             "Password1234!".to_string(),
         );
 
-        let result: Result<(), CreateUserUseCaseError> =
+        let result: Result<(), SignUpUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());
 
-        let error: CreateUserUseCaseError = result.unwrap_err();
+        let error: SignUpUseCaseError = result.unwrap_err();
 
         assert_eq!(
             error,
-            CreateUserUseCaseError::UserError(UserError::PasswordsDoNotMatch)
+            SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch)
         );
     }
 
     #[tokio::test]
     async fn should_return_error_if_password_hash_fails() {
-        let create_user_repository_mock: MockCreateUserRepository =
-            MockCreateUserRepository::default();
+        let create_user_repository_mock: MockSignUpRepository = MockSignUpRepository::default();
 
         let mut hasher_adapter_mock: MockHasherAdapter = MockHasherAdapter::default();
 
@@ -358,7 +352,7 @@ mod tests {
 
         let id_generator_adapter_mock: MockIdGeneratorAdapter = MockIdGeneratorAdapter::default();
 
-        let create_user_use_case: CreateUserUseCase = CreateUserUseCase::new(
+        let create_user_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
             Box::new(id_generator_adapter_mock),
             Box::new(create_user_repository_mock),
@@ -372,16 +366,16 @@ mod tests {
             "Password123!".to_string(),
         );
 
-        let result: Result<(), CreateUserUseCaseError> =
+        let result: Result<(), SignUpUseCaseError> =
             create_user_use_case.perform(create_user_dto).await;
 
         assert!(result.is_err());
 
-        let error: CreateUserUseCaseError = result.unwrap_err();
+        let error: SignUpUseCaseError = result.unwrap_err();
 
         assert_eq!(
             error,
-            CreateUserUseCaseError::HasherError(HasherError::HashingError {
+            SignUpUseCaseError::HasherError(HasherError::HashingError {
                 message: "Hashing error".to_string()
             })
         );
