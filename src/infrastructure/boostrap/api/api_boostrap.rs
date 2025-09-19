@@ -1,33 +1,17 @@
-use std::pin::Pin;
+use std::{pin::Pin, sync::Arc};
 
 use axum::Router;
 use sqlx::{Pool, Postgres};
 use tokio::net::TcpListener;
 
 use crate::{
-    application::{
-        ports::{
-            auth::sign_up_repository::SignUpRepositoryPort,
-            database::database_port::{DatabasePort, PoolWrapper},
-            hasher::hasher_port::HasherPort,
-            id_generator::id_generator_port::IdGeneratorPort,
-        },
-        use_cases::auth::sign_up_use_case::{SignUpUseCase, SignUpUseCasePort},
-    },
     infrastructure::{
-        adapters::{
-            bcrypt::bcrypt_adapter::BcryptAdapter, regex::regex_adapter::RegexAdapter,
-            uuid::uuid_adapter::UuidAdapter,
-        },
+        factories::controller::auth::sign_up_controller_factory::SignUpControllerFactory,
         gateways::database::database_gateway::DatabaseGateway,
-        repositories::auth::sign_up_repository::SignUpRepository,
     },
     presentation::{
-        controllers::auth::{
-            sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
-        },
-        ports::router::router_port::RouterPort,
-        routers::core::core_router::CoreRouter,
+        controllers::auth::sign_up_controller::SignUpController,
+        ports::router::router_port::RouterPort, routers::core::core_router::CoreRouter,
     },
 };
 
@@ -63,14 +47,16 @@ impl ApiBootstrapPort for ApiBootstrap {
 
             let database_gateway: DatabaseGateway = DatabaseGateway;
 
-            let database_pool: Box<dyn PoolWrapper> = database_gateway
-                .initialize_pool()
-                .await
-                .unwrap_or_else(|err| {
-                    tracing::error!("{}", &err.to_string());
+            let database_pool: Arc<Pool<Postgres>> = Arc::new(
+                database_gateway
+                    .initialize_pool()
+                    .await
+                    .unwrap_or_else(|err| {
+                        tracing::error!("{}", &err.to_string());
 
-                    std::process::exit(1)
-                });
+                        std::process::exit(1)
+                    }),
+            );
 
             tracing::info!("Database pool successfully initialized.");
 
@@ -101,30 +87,12 @@ impl ApiBootstrapPort for ApiBootstrap {
 
             tracing::info!("{}", server_started_message);
 
-            let hasher_adapter: Box<dyn HasherPort> = Box::new(BcryptAdapter);
-            let id_generator_adapter: Box<dyn IdGeneratorPort> = Box::new(UuidAdapter);
+            let sign_up_controller_factory: SignUpControllerFactory =
+                SignUpControllerFactory::new(database_pool);
 
-            let sign_up_repository: Box<dyn SignUpRepositoryPort> =
-                Box::new(SignUpRepository::new(
-                    *database_pool
-                        .into_inner()
-                        .downcast::<Pool<Postgres>>()
-                        .unwrap(),
-                ));
-
-            let sign_up_use_case: Box<dyn SignUpUseCasePort> = Box::new(SignUpUseCase::new(
-                hasher_adapter,
-                id_generator_adapter,
-                sign_up_repository,
-            ));
-
-            let sign_up_validator: SignUpValidator = SignUpValidator;
-            let regex_adapter: RegexAdapter = RegexAdapter;
-
-            let sign_up_controller: SignUpController =
-                SignUpController::new(sign_up_validator, regex_adapter, sign_up_use_case);
-
+            let sign_up_controller: SignUpController = sign_up_controller_factory.build();
             let core_router: CoreRouter = CoreRouter::new(sign_up_controller);
+
             let axum_router: Router = core_router.register_routes();
 
             axum::serve(tcp_listener, axum_router)

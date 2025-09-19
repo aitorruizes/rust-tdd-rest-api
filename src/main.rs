@@ -16,10 +16,6 @@ pub mod domain {
 
 pub mod application {
     pub mod ports {
-        pub mod database {
-            pub mod database_port;
-        }
-
         pub mod hasher {
             pub mod hasher_port;
         }
@@ -80,6 +76,14 @@ pub mod infrastructure {
     pub mod boostrap {
         pub mod api {
             pub mod api_boostrap;
+        }
+    }
+
+    pub mod factories {
+        pub mod controller {
+            pub mod auth {
+                pub mod sign_up_controller_factory;
+            }
         }
     }
 }

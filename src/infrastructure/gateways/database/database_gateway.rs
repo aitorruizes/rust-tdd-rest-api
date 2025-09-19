@@ -1,19 +1,30 @@
+use std::pin::Pin;
+
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
-use std::any::Any;
 
-use crate::application::ports::database::database_port::{
-    DatabaseError, DatabasePort, InitializePoolFuture, PoolWrapper,
-};
-
-pub struct SqlxPoolWrapper {
-    pool: Pool<Postgres>,
+#[derive(Debug)]
+pub enum DatabaseError {
+    Pool { message: String },
 }
 
-impl PoolWrapper for SqlxPoolWrapper {
-    fn into_inner(self: Box<Self>) -> Box<dyn Any + Send + Sync> {
-        Box::new(self.pool)
+impl std::fmt::Display for DatabaseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DatabaseError::Pool { message } => {
+                write!(
+                    f,
+                    "An error occurred while initializing database pool: {}.",
+                    message
+                )
+            }
+        }
     }
 }
+
+impl std::error::Error for DatabaseError {}
+
+pub type InitializePoolFuture =
+    Pin<Box<dyn Future<Output = Result<Pool<Postgres>, DatabaseError>>>>;
 
 pub struct DatabaseGateway;
 
@@ -21,10 +32,8 @@ impl DatabaseGateway {
     pub fn new() -> Self {
         DatabaseGateway
     }
-}
 
-impl DatabasePort for DatabaseGateway {
-    fn initialize_pool(&self) -> InitializePoolFuture {
+    pub fn initialize_pool(&self) -> InitializePoolFuture {
         Box::pin(async move {
             let pool: Pool<Postgres> = PgPoolOptions::new()
                 .max_connections(5)
@@ -34,7 +43,7 @@ impl DatabasePort for DatabaseGateway {
                     message: err.to_string(),
                 })?;
 
-            Ok(Box::new(SqlxPoolWrapper { pool }) as Box<dyn PoolWrapper>)
+            Ok(pool)
         })
     }
 }
