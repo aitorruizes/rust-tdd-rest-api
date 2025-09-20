@@ -32,12 +32,14 @@ pub mod application {
 
     pub mod use_cases {
         pub mod auth {
+            pub mod sign_in_use_case;
             pub mod sign_up_use_case;
         }
     }
 
     pub mod dtos {
         pub mod auth {
+            pub mod sign_in_dto;
             pub mod sign_up_dto;
         }
     }

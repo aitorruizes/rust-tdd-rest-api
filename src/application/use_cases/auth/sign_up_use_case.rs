@@ -109,7 +109,6 @@ impl SignUpUseCasePort for SignUpUseCase {
                 .build();
 
             self.sign_up_repository
-                .as_ref()
                 .execute(user_entity)
                 .await
                 .map_err(SignUpUseCaseError::DatabaseError)?;
