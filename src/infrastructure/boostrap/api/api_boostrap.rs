@@ -1,4 +1,4 @@
-use std::{pin::Pin, sync::Arc};
+use std::{net::SocketAddr, pin::Pin, sync::Arc};
 
 use axum::Router;
 use sqlx::{Pool, Postgres};
@@ -107,13 +107,16 @@ impl ApiBootstrapPort for ApiBootstrap {
 
             let axum_router: Router = core_router.register_routes();
 
-            axum::serve(tcp_listener, axum_router)
-                .await
-                .unwrap_or_else(|err| {
-                    tracing::error!("{}", &err.to_string());
+            axum::serve(
+                tcp_listener,
+                axum_router.into_make_service_with_connect_info::<SocketAddr>(),
+            )
+            .await
+            .unwrap_or_else(|err| {
+                tracing::error!("{}", &err.to_string());
 
-                    std::process::exit(1)
-                });
+                std::process::exit(1)
+            });
 
             Ok(())
         })

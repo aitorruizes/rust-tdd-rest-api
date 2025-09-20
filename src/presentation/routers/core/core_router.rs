@@ -1,5 +1,7 @@
-use axum::{Json, Router, http::StatusCode};
+use axum::{Json, Router, http::StatusCode, response::IntoResponse};
 use serde_json::json;
+use tower::ServiceBuilder;
+use tower_governor::{GovernorError, GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::trace::TraceLayer;
 
 use crate::presentation::{
@@ -29,9 +31,50 @@ impl RouterPort for CoreRouter {
         let auth_router: AuthRouter =
             AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
 
+        let trace_layer_middleware = TraceLayer::new_for_http();
+
+        let governor_config = GovernorConfigBuilder::default()
+            .per_second(4)
+            .burst_size(2)
+            .finish()
+            .unwrap();
+
+        let governor_middleware =
+            GovernorLayer::new(governor_config).error_handler(|err: GovernorError| match err {
+                GovernorError::TooManyRequests { .. } => (
+                    StatusCode::TOO_MANY_REQUESTS,
+                    Json(json!({
+                        "error_code": "too_many_requests",
+                        "error_message": "rate limit exceeded"
+                    })),
+                )
+                    .into_response(),
+
+                GovernorError::UnableToExtractKey => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error_code": "unable_to_extract_key",
+                        "error_message": "a key extractor must be provided"
+                    })),
+                )
+                    .into_response(),
+                GovernorError::Other { msg, .. } => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error_code": "internal_server_error",
+                        "error_message": msg
+                    })),
+                )
+                    .into_response(),
+            });
+
         Router::new()
             .nest("/api/v1", auth_router.register_routes())
-            .layer(TraceLayer::new_for_http())
+            .layer(
+                ServiceBuilder::new()
+                    .layer(trace_layer_middleware)
+                    .layer(governor_middleware),
+            )
             .fallback(|| async {
                 (
                     StatusCode::NOT_FOUND,
