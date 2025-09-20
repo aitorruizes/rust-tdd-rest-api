@@ -2,6 +2,7 @@ use axum::{Json, Router, http::StatusCode, response::IntoResponse};
 use serde_json::json;
 use tower::ServiceBuilder;
 use tower_governor::{GovernorError, GovernorLayer, governor::GovernorConfigBuilder};
+use tower_helmet::HelmetLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::presentation::{
@@ -68,12 +69,15 @@ impl RouterPort for CoreRouter {
                     .into_response(),
             });
 
+        let helmet_middleware: HelmetLayer = HelmetLayer::with_defaults();
+
         Router::new()
             .nest("/api/v1", auth_router.register_routes())
             .layer(
                 ServiceBuilder::new()
                     .layer(trace_layer_middleware)
-                    .layer(governor_middleware),
+                    .layer(governor_middleware)
+                    .layer(helmet_middleware),
             )
             .fallback(|| async {
                 (
