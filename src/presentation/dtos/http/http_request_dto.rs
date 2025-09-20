@@ -6,5 +6,5 @@ pub struct HttpRequestDto {
     pub body: Option<Value>,
     pub method: String,
     pub url: String,
-    pub params: Option<HashMap<String, String>>
+    pub params: Option<HashMap<String, String>>,
 }

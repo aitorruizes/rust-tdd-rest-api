@@ -24,9 +24,13 @@ pub mod application {
             pub mod id_generator_port;
         }
 
-        pub mod auth {
+        pub mod repositories {
             pub mod sign_in_repository_port;
             pub mod sign_up_repository_port;
+        }
+
+        pub mod auth {
+            pub mod auth_port;
         }
     }
 
@@ -69,6 +73,10 @@ pub mod infrastructure {
         pub mod regex {
             pub mod regex_adapter;
         }
+
+        pub mod jsonwebtoken {
+            pub mod jsonwebtoken_adapter;
+        }
     }
 
     pub mod gateways {
@@ -86,8 +94,8 @@ pub mod infrastructure {
     pub mod factories {
         pub mod controller {
             pub mod auth {
-                pub mod sign_up_controller_factory;
                 pub mod sign_in_controller_factory;
+                pub mod sign_up_controller_factory;
             }
         }
     }

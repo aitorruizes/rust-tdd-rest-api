@@ -3,7 +3,7 @@ use std::{pin::Pin, sync::Arc};
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::ports::auth::sign_up_repository_port::{
+    application::ports::repositories::sign_up_repository_port::{
         SignUpRepositoryError, SignUpRepositoryPort,
     },
     domain::entities::user::user_entity::UserEntity,

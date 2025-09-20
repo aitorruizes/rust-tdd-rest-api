@@ -6,9 +6,9 @@ use crate::{
     application::{
         dtos::auth::sign_up_dto::SignUpDto,
         ports::{
-            auth::sign_up_repository_port::{SignUpRepositoryError, SignUpRepositoryPort},
             hasher::hasher_port::{HasherError, HasherPort},
             id_generator::id_generator_port::IdGeneratorPort,
+            repositories::sign_up_repository_port::{SignUpRepositoryError, SignUpRepositoryPort},
         },
     },
     domain::{
@@ -141,9 +141,11 @@ mod tests {
         application::dtos::auth::sign_up_dto::SignUpDto,
         application::{
             ports::{
-                auth::sign_up_repository_port::{SignUpRepositoryError, SignUpRepositoryPort},
                 hasher::hasher_port::{HasherError, HasherPort},
                 id_generator::id_generator_port::IdGeneratorPort,
+                repositories::sign_up_repository_port::{
+                    SignUpRepositoryError, SignUpRepositoryPort,
+                },
             },
             use_cases::auth::sign_up_use_case::{
                 SignUpUseCase, SignUpUseCaseError, SignUpUseCasePort,

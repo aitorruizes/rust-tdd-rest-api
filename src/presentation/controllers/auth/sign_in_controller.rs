@@ -57,9 +57,9 @@ impl ControllerPort for SignInController {
 
             match self.sign_in_use_case.perform(sign_in_dto).await {
                 Ok(result) => match result {
-                    Some(_) => HttpResponseDto {
+                    Some(generated_auth_token) => HttpResponseDto {
                         status_code: 200,
-                        body: Some(serde_json::json!({ "token": "any_token" })),
+                        body: Some(serde_json::json!({ "token": generated_auth_token })),
                     },
                     None => HttpResponseDto {
                         status_code: 404,
@@ -68,6 +68,7 @@ impl ControllerPort for SignInController {
                 },
                 Err(err) => {
                     let (error_code, error_message) = match err {
+                        SignInUseCaseError::AuthError(e) => ("use_case_error", e.to_string()),
                         SignInUseCaseError::DatabaseError(e) => ("repository_error", e.to_string()),
                     };
 

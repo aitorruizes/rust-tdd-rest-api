@@ -4,7 +4,10 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     application::use_cases::auth::sign_in_use_case::SignInUseCase,
-    infrastructure::repositories::auth::sign_in_repository::SignInRepository,
+    infrastructure::{
+        adapters::jsonwebtoken::jsonwebtoken_adapter::JsonWebTokenAdapter,
+        repositories::auth::sign_in_repository::SignInRepository,
+    },
     presentation::controllers::auth::sign_in_controller::SignInController,
 };
 
@@ -18,10 +21,13 @@ impl SignInControllerFactory {
     }
 
     pub fn build(&self) -> SignInController {
+        let auth_adapter: JsonWebTokenAdapter = JsonWebTokenAdapter;
+
         let sign_in_repository: SignInRepository =
             SignInRepository::new(self.database_pool.clone());
 
-        let sign_in_use_case: SignInUseCase = SignInUseCase::new(Box::new(sign_in_repository));
+        let sign_in_use_case: SignInUseCase =
+            SignInUseCase::new(Box::new(auth_adapter), Box::new(sign_in_repository));
 
         SignInController::new(Box::new(sign_in_use_case))
     }

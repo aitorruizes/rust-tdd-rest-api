@@ -24,6 +24,7 @@ sqlx = { version = "0.8", features = [
     "uuid",
     "time",
 ] }
+jsonwebtoken = "9.3.1"
 
 [dev-dependencies]
 mockall = "0.13.1"
