@@ -31,7 +31,7 @@ impl SignUpRepositoryPort for SignUpRepository {
                 INSERT INTO users (id, first_name, last_name, email, password)
                 VALUES ($1, $2, $3, $4, $5)
                 "#,
-                uuid::Uuid::parse_str(&user_entity.id).unwrap(),
+                user_entity.id,
                 user_entity.first_name,
                 user_entity.last_name,
                 user_entity.email,

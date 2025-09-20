@@ -87,6 +87,7 @@ pub mod infrastructure {
         pub mod controller {
             pub mod auth {
                 pub mod sign_up_controller_factory;
+                pub mod sign_in_controller_factory;
             }
         }
     }

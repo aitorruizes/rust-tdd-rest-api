@@ -1,5 +1,7 @@
+use uuid::Uuid;
+
 pub trait IdGeneratorPort: IdGeneratorPortClone + Send + Sync {
-    fn generate_id(&self) -> String;
+    fn generate_id(&self) -> Uuid;
 }
 
 pub trait IdGeneratorPortClone {

@@ -1,5 +1,7 @@
 use std::pin::Pin;
 
+use uuid::Uuid;
+
 use crate::{
     application::{
         dtos::auth::sign_up_dto::SignUpDto,
@@ -98,7 +100,7 @@ impl SignUpUseCasePort for SignUpUseCase {
                 .hash(sign_up_dto.password.as_str())
                 .map_err(SignUpUseCaseError::HasherError)?;
 
-            let generated_id: String = self.id_generator_adapter.generate_id();
+            let generated_id: Uuid = self.id_generator_adapter.generate_id();
 
             let user_entity = UserEntityBuilder::default()
                 .id(generated_id)
@@ -133,6 +135,7 @@ mod tests {
     use std::pin::Pin;
 
     use mockall::mock;
+    use uuid::Uuid;
 
     use crate::{
         application::dtos::auth::sign_up_dto::SignUpDto,
@@ -185,7 +188,7 @@ mod tests {
         pub IdGeneratorAdapter {}
 
         impl IdGeneratorPort for IdGeneratorAdapter {
-            fn generate_id(&self) -> String;
+            fn generate_id(&self) -> Uuid;
         }
 
         impl Clone for IdGeneratorAdapter {
@@ -217,7 +220,7 @@ mod tests {
         id_generator_adapter_mock
             .expect_generate_id()
             .times(1)
-            .returning(|| "generated_id".to_string());
+            .returning(|| Uuid::parse_str("d836bc7f-014e-4818-a97f-dd1bb1987b66").unwrap());
 
         let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),
@@ -265,7 +268,7 @@ mod tests {
         id_generator_adapter_mock
             .expect_generate_id()
             .times(1)
-            .returning(|| "generated_id".to_string());
+            .returning(|| Uuid::parse_str("d836bc7f-014e-4818-a97f-dd1bb1987b66").unwrap());
 
         let sign_up_use_case: SignUpUseCase = SignUpUseCase::new(
             Box::new(hasher_adapter_mock),

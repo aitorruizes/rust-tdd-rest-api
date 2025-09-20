@@ -27,8 +27,8 @@ impl SignInRepositoryPort for SignInRepository {
     ) -> Pin<Box<dyn Future<Output = Result<Option<UserEntity>, SignInRepositoryError>> + Send + '_>>
     {
         Box::pin(async move {
-            let user_entity =
-                sqlx::query_as!(UserEntity, "SELECT * FROM users WHERE email = $1", email,)
+            let user_entity: Option<UserEntity> =
+                sqlx::query_as!(UserEntity, "SELECT * FROM users WHERE email = $1", email)
                     .fetch_optional(&*self.database_pool)
                     .await
                     .map_err(|err| SignInRepositoryError::FindByEmailError {

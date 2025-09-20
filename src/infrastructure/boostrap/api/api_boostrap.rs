@@ -6,12 +6,18 @@ use tokio::net::TcpListener;
 
 use crate::{
     infrastructure::{
-        factories::controller::auth::sign_up_controller_factory::SignUpControllerFactory,
+        factories::controller::auth::{
+            sign_in_controller_factory::SignInControllerFactory,
+            sign_up_controller_factory::SignUpControllerFactory,
+        },
         gateways::database::database_gateway::DatabaseGateway,
     },
     presentation::{
-        controllers::auth::sign_up_controller::SignUpController,
-        ports::router::router_port::RouterPort, routers::core::core_router::CoreRouter,
+        controllers::auth::{
+            sign_in_controller::SignInController, sign_up_controller::SignUpController,
+        },
+        ports::router::router_port::RouterPort,
+        routers::core::core_router::CoreRouter,
     },
 };
 
@@ -88,10 +94,16 @@ impl ApiBootstrapPort for ApiBootstrap {
             tracing::info!("{}", server_started_message);
 
             let sign_up_controller_factory: SignUpControllerFactory =
-                SignUpControllerFactory::new(database_pool);
+                SignUpControllerFactory::new(database_pool.clone());
 
             let sign_up_controller: SignUpController = sign_up_controller_factory.build();
-            let core_router: CoreRouter = CoreRouter::new(sign_up_controller);
+
+            let sign_in_controller_factory: SignInControllerFactory =
+                SignInControllerFactory::new(database_pool);
+
+            let sign_in_controller: SignInController = sign_in_controller_factory.build();
+
+            let core_router: CoreRouter = CoreRouter::new(sign_up_controller, sign_in_controller);
 
             let axum_router: Router = core_router.register_routes();
 

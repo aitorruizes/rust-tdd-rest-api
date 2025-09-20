@@ -1,21 +1,24 @@
 use serde::Serialize;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct UserEntity {
-    pub id: String,
+    pub id: Uuid,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
     pub password: String,
     pub is_admin: bool,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
     pub updated_at: OffsetDateTime,
 }
 
 #[derive(Debug, Clone)]
 pub struct UserEntityBuilder {
-    id: String,
+    id: Uuid,
     first_name: String,
     last_name: String,
     email: String,
@@ -28,7 +31,7 @@ pub struct UserEntityBuilder {
 impl UserEntityBuilder {
     pub fn new() -> Self {
         Self {
-            id: "".to_string(),
+            id: Uuid::nil(),
             first_name: "".to_string(),
             last_name: "".to_string(),
             email: "".to_string(),
@@ -39,7 +42,7 @@ impl UserEntityBuilder {
         }
     }
 
-    pub fn id(mut self, id: impl Into<String>) -> Self {
+    pub fn id(mut self, id: impl Into<Uuid>) -> Self {
         self.id = id.into();
         self
     }
