@@ -1,5 +1,6 @@
 use axum::{Json, Router, http::StatusCode};
 use serde_json::json;
+use tower_http::trace::TraceLayer;
 
 use crate::presentation::{
     controllers::auth::{
@@ -30,6 +31,7 @@ impl RouterPort for CoreRouter {
 
         Router::new()
             .nest("/api/v1", auth_router.register_routes())
+            .layer(TraceLayer::new_for_http())
             .fallback(|| async {
                 (
                     StatusCode::NOT_FOUND,
