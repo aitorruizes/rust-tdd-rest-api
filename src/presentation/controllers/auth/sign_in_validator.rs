@@ -11,13 +11,7 @@ impl SignInValidator {
     pub fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
         let mut errors: Vec<Value> = vec![];
 
-        let required_fields: [&'static str; 5] = [
-            "first_name",
-            "last_name",
-            "email",
-            "password",
-            "password_confirmation",
-        ];
+        let required_fields: [&'static str; 2] = ["email", "password"];
 
         for &field in &required_fields {
             match fields.get(field) {
@@ -30,16 +24,6 @@ impl SignInValidator {
                 },
                 None => errors.push(json!({"field": field, "error": "missing"})),
             }
-        }
-
-        if let (Some(password), Some(password_confirmation)) = (
-            fields.get("password").and_then(|v| v.as_str()),
-            fields.get("password_confirmation").and_then(|v| v.as_str()),
-        ) && password != password_confirmation
-        {
-            errors.push(
-                    json!({"fields": ["password", "password_confirmation"], "error": "passwords do not match"}),
-                );
         }
 
         if errors.is_empty() {

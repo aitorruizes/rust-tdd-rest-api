@@ -26,9 +26,9 @@ pub enum SignUpUseCaseError {
 impl std::fmt::Display for SignUpUseCaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SignUpUseCaseError::HasherError(e) => write!(f, "{}", e),
-            SignUpUseCaseError::UserError(e) => write!(f, "{}", e),
-            SignUpUseCaseError::DatabaseError(e) => write!(f, "{}", e),
+            SignUpUseCaseError::HasherError(error) => write!(f, "{}", error),
+            SignUpUseCaseError::UserError(error) => write!(f, "{}", error),
+            SignUpUseCaseError::DatabaseError(error) => write!(f, "{}", error),
         }
     }
 }
@@ -36,9 +36,9 @@ impl std::fmt::Display for SignUpUseCaseError {
 impl std::error::Error for SignUpUseCaseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            SignUpUseCaseError::HasherError(e) => Some(e),
-            SignUpUseCaseError::UserError(e) => Some(e),
-            SignUpUseCaseError::DatabaseError(e) => Some(e),
+            SignUpUseCaseError::HasherError(error) => Some(error),
+            SignUpUseCaseError::UserError(error) => Some(error),
+            SignUpUseCaseError::DatabaseError(error) => Some(error),
         }
     }
 }

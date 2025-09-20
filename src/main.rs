@@ -32,6 +32,10 @@ pub mod application {
         pub mod auth {
             pub mod auth_port;
         }
+
+        pub mod pattern_matching {
+            pub mod pattern_matching_port;
+        }
     }
 
     pub mod use_cases {
@@ -67,7 +71,7 @@ pub mod infrastructure {
         }
 
         pub mod axum {
-            pub mod axum_adapter;
+            pub mod axum_handler_adapter;
         }
 
         pub mod regex {

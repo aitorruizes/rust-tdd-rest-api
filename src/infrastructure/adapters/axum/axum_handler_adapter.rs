@@ -13,16 +13,16 @@ use crate::presentation::{
 };
 
 #[derive(Clone)]
-pub struct AxumAdapter {
-    controller: Box<dyn ControllerPort + Send + Sync>,
+pub struct AxumHandlerAdapter {
+    handler: Box<dyn ControllerPort + Send + Sync>,
 }
 
-impl AxumAdapter {
-    pub fn new(controller: Box<dyn ControllerPort + Send + Sync>) -> Self {
-        Self { controller }
+impl AxumHandlerAdapter {
+    pub fn new(handler: Box<dyn ControllerPort + Send + Sync>) -> Self {
+        Self { handler }
     }
 
-    pub async fn adapt_controller(
+    pub async fn adapt_handler(
         &self,
         Path(request_params): Path<HashMap<String, String>>,
         req: Request<Body>,
@@ -61,7 +61,7 @@ impl AxumAdapter {
                 Err(_) => {
                     return Response::builder()
                         .status(StatusCode::BAD_REQUEST)
-                        .body(Body::from("Invalid JSON structure."))
+                        .body(Body::from("Invalid JSON structurerror."))
                         .unwrap();
                 }
             }
@@ -74,7 +74,7 @@ impl AxumAdapter {
             params: Some(request_params),
         };
 
-        let http_response_dto: HttpResponseDto = self.controller.handle(http_request_dto).await;
+        let http_response_dto: HttpResponseDto = self.handler.handle(http_request_dto).await;
 
         let body_string: String = http_response_dto
             .body
@@ -86,19 +86,5 @@ impl AxumAdapter {
             .header("content-type", "application/json")
             .body(Body::from(body_string))
             .unwrap()
-    }
-}
-
-pub struct AxumRouteAdapter;
-
-impl AxumRouteAdapter {
-    pub fn new() -> Self {
-        AxumRouteAdapter
-    }
-}
-
-impl Default for AxumRouteAdapter {
-    fn default() -> Self {
-        Self::new()
     }
 }

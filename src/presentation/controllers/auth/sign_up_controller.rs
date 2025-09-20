@@ -5,9 +5,9 @@ use serde_json::{Value, json};
 use crate::{
     application::{
         dtos::auth::sign_up_dto::SignUpDto,
+        ports::pattern_matching::pattern_matching_port::{PatternMatchingPort, RegexError},
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
-    infrastructure::adapters::regex::regex_adapter::{RegexAdapter, RegexError},
     presentation::{
         controllers::auth::sign_up_validator::SignUpValidator,
         dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
@@ -17,19 +17,19 @@ use crate::{
 
 pub struct SignUpController {
     sign_up_validator: SignUpValidator,
-    regex_adapter: RegexAdapter,
+    pattern_matching_adapter: Box<dyn PatternMatchingPort>,
     sign_up_use_case: Box<dyn SignUpUseCasePort>,
 }
 
 impl SignUpController {
     pub fn new(
         sign_up_validator: SignUpValidator,
-        regex_adapter: RegexAdapter,
+        pattern_matching_adapter: Box<dyn PatternMatchingPort>,
         sign_up_use_case: Box<dyn SignUpUseCasePort>,
     ) -> Self {
         SignUpController {
-            regex_adapter,
             sign_up_validator,
+            pattern_matching_adapter,
             sign_up_use_case,
         }
     }
@@ -66,7 +66,7 @@ impl ControllerPort for SignUpController {
             }
 
             let is_valid_email: Result<bool, RegexError> = self
-                .regex_adapter
+                .pattern_matching_adapter
                 .is_valid_email(body["email"].as_str().unwrap());
 
             match is_valid_email {
@@ -94,7 +94,7 @@ impl ControllerPort for SignUpController {
             }
 
             let is_valid_email_domain: Result<bool, RegexError> = self
-                .regex_adapter
+                .pattern_matching_adapter
                 .is_valid_email_domain(body["email"].as_str().unwrap());
 
             match is_valid_email_domain {
@@ -122,7 +122,7 @@ impl ControllerPort for SignUpController {
             }
 
             let is_valid_password: Result<bool, RegexError> = self
-                .regex_adapter
+                .pattern_matching_adapter
                 .is_valid_password(body["password"].as_str().unwrap());
 
             match is_valid_password {
@@ -158,9 +158,11 @@ impl ControllerPort for SignUpController {
 
             if let Err(err) = self.sign_up_use_case.perform(sign_up_dto).await {
                 let (error_code, error_message) = match err {
-                    SignUpUseCaseError::HasherError(e) => ("use_case_error", e.to_string()),
-                    SignUpUseCaseError::UserError(e) => ("use_case_error", e.to_string()),
-                    SignUpUseCaseError::DatabaseError(e) => ("repository_error", e.to_string()),
+                    SignUpUseCaseError::HasherError(error) => ("use_case_error", error.to_string()),
+                    SignUpUseCaseError::UserError(error) => ("use_case_error", error.to_string()),
+                    SignUpUseCaseError::DatabaseError(error) => {
+                        ("repository_error", error.to_string())
+                    }
                 };
 
                 return HttpResponseDto {
@@ -184,7 +186,7 @@ impl Clone for SignUpController {
     fn clone(&self) -> Self {
         Self {
             sign_up_validator: self.sign_up_validator.clone(),
-            regex_adapter: self.regex_adapter.clone(),
+            pattern_matching_adapter: self.pattern_matching_adapter.clone_box(),
             sign_up_use_case: self.sign_up_use_case.clone_box(),
         }
     }
