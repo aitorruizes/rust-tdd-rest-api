@@ -1,3 +1,5 @@
+use time::OffsetDateTime;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct UserEntity {
     pub id: String,
@@ -6,8 +8,8 @@ pub struct UserEntity {
     pub email: String,
     pub password: String,
     pub is_admin: bool,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: OffsetDateTime,
+    pub updated_at: OffsetDateTime,
 }
 
 #[derive(Debug, Clone)]
@@ -18,8 +20,8 @@ pub struct UserEntityBuilder {
     email: String,
     password: String,
     is_admin: bool,
-    created_at: String,
-    updated_at: String,
+    created_at: OffsetDateTime,
+    updated_at: OffsetDateTime,
 }
 
 impl UserEntityBuilder {
@@ -31,8 +33,8 @@ impl UserEntityBuilder {
             email: "".to_string(),
             password: "".to_string(),
             is_admin: false,
-            created_at: "".to_string(),
-            updated_at: "".to_string(),
+            created_at: OffsetDateTime::now_utc(),
+            updated_at: OffsetDateTime::now_utc(),
         }
     }
 
@@ -66,12 +68,12 @@ impl UserEntityBuilder {
         self
     }
 
-    pub fn created_at(mut self, created_at: impl Into<String>) -> Self {
+    pub fn created_at(mut self, created_at: impl Into<OffsetDateTime>) -> Self {
         self.created_at = created_at.into();
         self
     }
 
-    pub fn updated_at(mut self, updated_at: impl Into<String>) -> Self {
+    pub fn updated_at(mut self, updated_at: impl Into<OffsetDateTime>) -> Self {
         self.updated_at = updated_at.into();
         self
     }

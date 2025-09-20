@@ -4,7 +4,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     application::{
-        ports::auth::sign_up_repository::SignUpRepositoryPort,
+        ports::auth::sign_up_repository_port::SignUpRepositoryPort,
         use_cases::auth::sign_up_use_case::SignUpUseCase,
     },
     infrastructure::{

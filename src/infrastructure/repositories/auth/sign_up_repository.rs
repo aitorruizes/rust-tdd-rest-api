@@ -3,7 +3,9 @@ use std::{pin::Pin, sync::Arc};
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::ports::auth::sign_up_repository::{SignUpRepositoryError, SignUpRepositoryPort},
+    application::ports::auth::sign_up_repository_port::{
+        SignUpRepositoryError, SignUpRepositoryPort,
+    },
     domain::entities::user::user_entity::UserEntity,
 };
 
@@ -26,7 +28,7 @@ impl SignUpRepositoryPort for SignUpRepository {
         Box::pin(async move {
             sqlx::query!(
                 r#"
-                INSERT INTO users (id, first_name, last_name, e_mail, password)
+                INSERT INTO users (id, first_name, last_name, email, password)
                 VALUES ($1, $2, $3, $4, $5)
                 "#,
                 uuid::Uuid::parse_str(&user_entity.id).unwrap(),

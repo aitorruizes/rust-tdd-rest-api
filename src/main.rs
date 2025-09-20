@@ -25,7 +25,8 @@ pub mod application {
         }
 
         pub mod auth {
-            pub mod sign_up_repository;
+            pub mod sign_in_repository_port;
+            pub mod sign_up_repository_port;
         }
     }
 
@@ -45,6 +46,7 @@ pub mod application {
 pub mod infrastructure {
     pub mod repositories {
         pub mod auth {
+            pub mod sign_in_repository;
             pub mod sign_up_repository;
         }
     }

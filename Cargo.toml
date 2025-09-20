@@ -20,8 +20,10 @@ sqlx = { version = "0.8", features = [
     "tls-native-tls",
     "postgres",
     "uuid",
+    "time"
 ] }
 tower_governor = "0.8.0"
+time = "0.3.44"
 
 [dev-dependencies]
 mockall = "0.13.1"
