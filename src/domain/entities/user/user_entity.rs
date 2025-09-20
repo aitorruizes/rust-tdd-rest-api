@@ -1,6 +1,7 @@
+use serde::Serialize;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct UserEntity {
     pub id: String,
     pub first_name: String,

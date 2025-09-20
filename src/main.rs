@@ -102,6 +102,8 @@ pub mod presentation {
 
     pub mod controllers {
         pub mod auth {
+            pub mod sign_in_controller;
+            pub mod sign_in_validator;
             pub mod sign_up_controller;
             pub mod sign_up_validator;
         }

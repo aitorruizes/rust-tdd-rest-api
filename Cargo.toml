@@ -12,18 +12,18 @@ axum = "0.8.4"
 serde = "1.0.225"
 serde_json = "1.0.145"
 regex = "1.11.2"
+tower_governor = "0.8.0"
 tower-http = { version = "0.6.6", features = ["cors", "trace"] }
 tokio = { version = "1.47.1", features = ["full"] }
 uuid = { version = "1.18.1", features = ["v4"] }
+time = { version = "0.3.44", features = ["serde"] }
 sqlx = { version = "0.8", features = [
     "runtime-tokio",
     "tls-native-tls",
     "postgres",
     "uuid",
-    "time"
+    "time",
 ] }
-tower_governor = "0.8.0"
-time = "0.3.44"
 
 [dev-dependencies]
 mockall = "0.13.1"

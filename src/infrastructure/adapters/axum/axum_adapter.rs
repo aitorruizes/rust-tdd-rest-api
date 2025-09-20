@@ -24,7 +24,7 @@ impl AxumAdapter {
 
     pub async fn adapt_controller(
         &self,
-        Path(_request_params): Path<HashMap<String, String>>,
+        Path(request_params): Path<HashMap<String, String>>,
         req: Request<Body>,
     ) -> Response<Body> {
         let method: Method = match *req.method() {
@@ -71,6 +71,7 @@ impl AxumAdapter {
             method: method.to_string(),
             url: uri,
             body: content,
+            params: Some(request_params),
         };
 
         let http_response_dto: HttpResponseDto = self.controller.handle(http_request_dto).await;
