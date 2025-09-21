@@ -3,14 +3,7 @@ use std::sync::Arc;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::{
-        ports::{
-            hasher::hasher_port::HasherPort, id_generator::id_generator_port::IdGeneratorPort,
-            pattern_matching::pattern_matching_port::PatternMatchingPort,
-            repositories::sign_up_repository_port::SignUpRepositoryPort,
-        },
-        use_cases::auth::sign_up_use_case::{SignUpUseCase, SignUpUseCasePort},
-    },
+    application::use_cases::auth::sign_up_use_case::SignUpUseCase,
     infrastructure::{
         adapters::{
             bcrypt::bcrypt_adapter::BcryptAdapter, regex::regex_adapter::RegexAdapter,
@@ -32,21 +25,18 @@ impl SignUpControllerFactory {
         SignUpControllerFactory { database_pool }
     }
 
-    pub fn build(&self) -> SignUpController {
-        let hasher_adapter: Box<dyn HasherPort> = Box::new(BcryptAdapter);
-        let id_generator_adapter: Box<dyn IdGeneratorPort> = Box::new(UuidAdapter);
+    pub fn build(
+        &self,
+    ) -> SignUpController<SignUpUseCase<BcryptAdapter, UuidAdapter, SignUpRepository>, RegexAdapter>
+    {
+        let sign_up_validator = SignUpValidator;
+        let pattern_matching_adapter = RegexAdapter;
+        let hasher_adapter = BcryptAdapter;
+        let id_generator_adapter = UuidAdapter;
+        let sign_up_repository = SignUpRepository::new(self.database_pool.clone());
 
-        let sign_up_repository: Box<dyn SignUpRepositoryPort> =
-            Box::new(SignUpRepository::new(self.database_pool.clone()));
-
-        let sign_up_use_case: Box<dyn SignUpUseCasePort> = Box::new(SignUpUseCase::new(
-            hasher_adapter,
-            id_generator_adapter,
-            sign_up_repository,
-        ));
-
-        let sign_up_validator: SignUpValidator = SignUpValidator;
-        let pattern_matching_adapter: Box<dyn PatternMatchingPort> = Box::new(RegexAdapter);
+        let sign_up_use_case =
+            SignUpUseCase::new(hasher_adapter, id_generator_adapter, sign_up_repository);
 
         SignUpController::new(
             sign_up_validator,

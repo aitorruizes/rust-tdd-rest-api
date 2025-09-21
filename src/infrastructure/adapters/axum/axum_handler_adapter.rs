@@ -4,21 +4,23 @@ use axum::{
     http::{Method, Response, StatusCode},
 };
 
-use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::presentation::{
-    dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
+    dtos::http::http_request_dto::HttpRequestDto,
     ports::controller::controller_port::ControllerPort,
 };
 
 #[derive(Clone)]
-pub struct AxumHandlerAdapter {
-    handler: Box<dyn ControllerPort + Send + Sync>,
+pub struct AxumHandlerAdapter<Controller> {
+    handler: Controller,
 }
 
-impl AxumHandlerAdapter {
-    pub fn new(handler: Box<dyn ControllerPort + Send + Sync>) -> Self {
+impl<Controller> AxumHandlerAdapter<Controller>
+where
+    Controller: ControllerPort + Clone + Send + Sync,
+{
+    pub fn new(handler: Controller) -> Self {
         Self { handler }
     }
 
@@ -27,7 +29,7 @@ impl AxumHandlerAdapter {
         Path(request_params): Path<HashMap<String, String>>,
         req: Request<Body>,
     ) -> Response<Body> {
-        let method: Method = match *req.method() {
+        let method = match *req.method() {
             Method::GET => Method::GET,
             Method::POST => Method::POST,
             Method::PUT => Method::PUT,
@@ -41,9 +43,9 @@ impl AxumHandlerAdapter {
             }
         };
 
-        let uri: String = req.uri().to_string();
+        let uri = req.uri().to_string();
 
-        let content_bytes = match to_bytes(req.into_body(), usize::MAX).await {
+        let body_bytes = match to_bytes(req.into_body(), usize::MAX).await {
             Ok(bytes) => bytes,
             Err(_) => {
                 return Response::builder()
@@ -53,10 +55,10 @@ impl AxumHandlerAdapter {
             }
         };
 
-        let content: Option<Value> = if content_bytes.is_empty() {
+        let body_content = if body_bytes.is_empty() {
             None
         } else {
-            match serde_json::from_slice(&content_bytes) {
+            match serde_json::from_slice(&body_bytes) {
                 Ok(json) => Some(json),
                 Err(_) => {
                     return Response::builder()
@@ -67,16 +69,16 @@ impl AxumHandlerAdapter {
             }
         };
 
-        let http_request_dto: HttpRequestDto = HttpRequestDto {
+        let http_request_dto = HttpRequestDto {
             method: method.to_string(),
             url: uri,
-            body: content,
+            body: body_content,
             params: Some(request_params),
         };
 
-        let http_response_dto: HttpResponseDto = self.handler.handle(http_request_dto).await;
+        let http_response_dto = self.handler.handle(http_request_dto).await;
 
-        let body_string: String = http_response_dto
+        let body_string = http_response_dto
             .body
             .map(|b| b.to_string())
             .unwrap_or_else(|| "{}".to_string());

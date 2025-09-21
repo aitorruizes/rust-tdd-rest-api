@@ -1,4 +1,4 @@
-use serde_json::{Value, json};
+use serde_json::json;
 
 #[derive(Clone)]
 pub struct SignUpValidator;
@@ -9,9 +9,9 @@ impl SignUpValidator {
     }
 
     pub fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
-        let mut errors: Vec<Value> = vec![];
+        let mut errors = vec![];
 
-        let required_fields: [&'static str; 5] = [
+        let required_fields = [
             "first_name",
             "last_name",
             "email",

@@ -19,28 +19,9 @@ impl std::fmt::Display for SignUpRepositoryError {
 
 impl std::error::Error for SignUpRepositoryError {}
 
-pub trait SignUpRepositoryPort: SignUpRepositoryPortClone + Send + Sync {
+pub trait SignUpRepositoryPort: Send + Sync {
     fn execute(
         &self,
         user_entity: UserEntity,
     ) -> Pin<Box<dyn Future<Output = Result<(), SignUpRepositoryError>> + Send + '_>>;
-}
-
-pub trait SignUpRepositoryPortClone {
-    fn clone_box(&self) -> Box<dyn SignUpRepositoryPort + Send + Sync>;
-}
-
-impl<T> SignUpRepositoryPortClone for T
-where
-    T: SignUpRepositoryPort + Clone + Send + Sync + 'static,
-{
-    fn clone_box(&self) -> Box<dyn SignUpRepositoryPort + Send + Sync> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn SignUpRepositoryPort + Send + Sync> {
-    fn clone(&self) -> Box<dyn SignUpRepositoryPort + Send + Sync> {
-        self.as_ref().clone_box()
-    }
 }

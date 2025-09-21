@@ -15,14 +15,14 @@ impl RegexAdapter {
 
 impl PatternMatchingPort for RegexAdapter {
     fn is_valid_email(&self, email: &str) -> Result<bool, RegexError> {
-        let regex: Regex = Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        let regex = Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
             .map_err(|_| RegexError::InvalidRegex)?;
 
         Ok(regex.is_match(email))
     }
 
     fn is_valid_email_domain(&self, email: &str) -> Result<bool, RegexError> {
-        let regex: Regex = Regex::new(
+        let regex = Regex::new(
             r"^[a-zA-Z0-9._%+-]+@(gmail\.com|outlook\.com|yahoo\.com|hotmail\.com|live\.com)$",
         )
         .map_err(|_| RegexError::InvalidRegex)?;
@@ -31,7 +31,7 @@ impl PatternMatchingPort for RegexAdapter {
     }
 
     fn is_valid_password(&self, password: &str) -> Result<bool, RegexError> {
-        let regex: Regex =
+        let regex =
             Regex::new(r"^[A-Za-z\d!@#$%^&*]{12,}$").map_err(|_| RegexError::InvalidRegex)?;
 
         Ok(regex.is_match(password))

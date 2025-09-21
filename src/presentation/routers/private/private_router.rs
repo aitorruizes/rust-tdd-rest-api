@@ -17,7 +17,7 @@ impl PrivateRouter {
 
 impl RouterPort for PrivateRouter {
     fn register_routes(self) -> Router {
-        let auth_middleware: AuthMiddleware = AuthMiddleware::new(Box::new(JsonWebTokenAdapter));
+        let auth_middleware = AuthMiddleware::new(JsonWebTokenAdapter);
 
         Router::new()
             .route("/home", get(|| async move { "Hello our dear customer!" }))

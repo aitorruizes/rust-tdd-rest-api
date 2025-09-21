@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::{
     application::{
@@ -15,17 +15,26 @@ use crate::{
     },
 };
 
-pub struct SignUpController {
+#[derive(Clone)]
+pub struct SignUpController<UseCase, PatternMatchingAdapter>
+where
+    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
+    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
+{
     sign_up_validator: SignUpValidator,
-    pattern_matching_adapter: Box<dyn PatternMatchingPort>,
-    sign_up_use_case: Box<dyn SignUpUseCasePort>,
+    pattern_matching_adapter: PatternMatchingAdapter,
+    sign_up_use_case: UseCase,
 }
 
-impl SignUpController {
+impl<UseCase, PatternMatchingAdapter> SignUpController<UseCase, PatternMatchingAdapter>
+where
+    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
+    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
+{
     pub fn new(
         sign_up_validator: SignUpValidator,
-        pattern_matching_adapter: Box<dyn PatternMatchingPort>,
-        sign_up_use_case: Box<dyn SignUpUseCasePort>,
+        pattern_matching_adapter: PatternMatchingAdapter,
+        sign_up_use_case: UseCase,
     ) -> Self {
         SignUpController {
             sign_up_validator,
@@ -35,13 +44,18 @@ impl SignUpController {
     }
 }
 
-impl ControllerPort for SignUpController {
+impl<UseCase, PatternMatchingAdapter> ControllerPort
+    for SignUpController<UseCase, PatternMatchingAdapter>
+where
+    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
+    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
+{
     fn handle(
         &self,
         http_request_dto: HttpRequestDto,
     ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>> {
         Box::pin(async move {
-            let body: Value = match http_request_dto.body {
+            let body = match http_request_dto.body {
                 Some(body) => body,
                 None => {
                     return HttpResponseDto {
@@ -65,7 +79,7 @@ impl ControllerPort for SignUpController {
                 };
             }
 
-            let is_valid_email: Result<bool, RegexError> = self
+            let is_valid_email = self
                 .pattern_matching_adapter
                 .is_valid_email(body["email"].as_str().unwrap());
 
@@ -93,7 +107,7 @@ impl ControllerPort for SignUpController {
                 }
             }
 
-            let is_valid_email_domain: Result<bool, RegexError> = self
+            let is_valid_email_domain = self
                 .pattern_matching_adapter
                 .is_valid_email_domain(body["email"].as_str().unwrap());
 
@@ -121,7 +135,7 @@ impl ControllerPort for SignUpController {
                 }
             }
 
-            let is_valid_password: Result<bool, RegexError> = self
+            let is_valid_password = self
                 .pattern_matching_adapter
                 .is_valid_password(body["password"].as_str().unwrap());
 
@@ -149,7 +163,7 @@ impl ControllerPort for SignUpController {
                 }
             }
 
-            let sign_up_dto: SignUpDto = SignUpDto::new(
+            let sign_up_dto = SignUpDto::new(
                 body["first_name"].as_str().unwrap().to_string(),
                 body["last_name"].as_str().unwrap().to_string(),
                 body["email"].as_str().unwrap().to_string(),
@@ -179,15 +193,5 @@ impl ControllerPort for SignUpController {
                 body: None,
             }
         })
-    }
-}
-
-impl Clone for SignUpController {
-    fn clone(&self) -> Self {
-        Self {
-            sign_up_validator: self.sign_up_validator.clone(),
-            pattern_matching_adapter: self.pattern_matching_adapter.clone_box(),
-            sign_up_use_case: self.sign_up_use_case.clone_box(),
-        }
     }
 }

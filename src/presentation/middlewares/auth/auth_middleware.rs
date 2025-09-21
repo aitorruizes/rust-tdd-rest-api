@@ -1,4 +1,3 @@
-use crate::application::ports::auth::auth_port::AuthPort;
 use axum::{
     body::Body,
     http::{Request, Response, StatusCode},
@@ -6,13 +5,18 @@ use axum::{
 };
 use serde_json::json;
 
+use crate::application::ports::auth::auth_port::AuthPort;
+
 #[derive(Clone)]
-pub struct AuthMiddleware {
-    auth_port: Box<dyn AuthPort + Send + Sync>,
+pub struct AuthMiddleware<AuthAdapter> {
+    auth_port: AuthAdapter,
 }
 
-impl AuthMiddleware {
-    pub fn new(auth_port: Box<dyn AuthPort + Send + Sync>) -> Self {
+impl<AuthAdapter> AuthMiddleware<AuthAdapter>
+where
+    AuthAdapter: AuthPort + Clone + Send + Sync,
+{
+    pub fn new(auth_port: AuthAdapter) -> Self {
         Self { auth_port }
     }
 
@@ -52,7 +56,7 @@ impl AuthMiddleware {
         match self.auth_port.verify_auth_token(token) {
             Ok(_) => next.run(req).await,
             Err(err) => {
-                let body: String = serde_json::to_string(&json!({
+                let body = serde_json::to_string(&json!({
                     "error_code": "authorization_middleware",
                     "error_message": err.to_string()
                 }))

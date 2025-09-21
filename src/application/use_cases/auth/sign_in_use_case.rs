@@ -36,43 +36,35 @@ impl std::error::Error for SignInUseCaseError {
     }
 }
 
-pub trait SignInUseCasePort: SignInUseCasePortClone + Send + Sync {
+pub trait SignInUseCasePort: Send + Sync {
     fn perform(
         &self,
         sign_in_dto: SignInDto,
     ) -> Pin<Box<dyn Future<Output = Result<Option<String>, SignInUseCaseError>> + Send + '_>>;
 }
 
-pub trait SignInUseCasePortClone {
-    fn clone_box(&self) -> Box<dyn SignInUseCasePort + Send + Sync>;
-}
-
-impl<T> SignInUseCasePortClone for T
+#[derive(Clone)]
+pub struct SignInUseCase<HasherAdapter, AuthAdapter, Repository>
 where
-    T: SignInUseCasePort + Clone + Send + Sync + 'static,
+    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
+    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
+    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
 {
-    fn clone_box(&self) -> Box<dyn SignInUseCasePort + Send + Sync> {
-        Box::new(self.clone())
-    }
+    hasher_adapter: HasherAdapter,
+    auth_adapter: AuthAdapter,
+    sign_in_repository: Repository,
 }
 
-impl Clone for Box<dyn SignInUseCasePort + Send + Sync> {
-    fn clone(&self) -> Box<dyn SignInUseCasePort + Send + Sync> {
-        self.as_ref().clone_box()
-    }
-}
-
-pub struct SignInUseCase {
-    hasher_adapter: Box<dyn HasherPort>,
-    auth_adapter: Box<dyn AuthPort>,
-    sign_in_repository: Box<dyn SignInRepositoryPort>,
-}
-
-impl SignInUseCase {
+impl<HasherAdapter, AuthAdapter, Repository> SignInUseCase<HasherAdapter, AuthAdapter, Repository>
+where
+    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
+    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
+    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
+{
     pub fn new(
-        hasher_adapter: Box<dyn HasherPort>,
-        auth_adapter: Box<dyn AuthPort>,
-        sign_in_repository: Box<dyn SignInRepositoryPort>,
+        hasher_adapter: HasherAdapter,
+        auth_adapter: AuthAdapter,
+        sign_in_repository: Repository,
     ) -> Self {
         Self {
             hasher_adapter,
@@ -82,7 +74,13 @@ impl SignInUseCase {
     }
 }
 
-impl SignInUseCasePort for SignInUseCase {
+impl<HasherAdapter, AuthAdapter, Repository> SignInUseCasePort
+    for SignInUseCase<HasherAdapter, AuthAdapter, Repository>
+where
+    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
+    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
+    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
+{
     fn perform(
         &self,
         sign_in_dto: SignInDto,
@@ -95,7 +93,7 @@ impl SignInUseCasePort for SignInUseCase {
                 .map_err(SignInUseCaseError::DatabaseError)?
             {
                 Some(user) => {
-                    let has_password_matched: bool = self
+                    let has_password_matched = self
                         .hasher_adapter
                         .verify(&sign_in_dto.password, &user.password)
                         .map_err(SignInUseCaseError::HasherError)?;
@@ -104,7 +102,7 @@ impl SignInUseCasePort for SignInUseCase {
                         return Ok(None);
                     }
 
-                    let generated_auth_token: String = self
+                    let generated_auth_token = self
                         .auth_adapter
                         .generate_auth_token(user.id)
                         .map_err(SignInUseCaseError::AuthError)?;
@@ -114,15 +112,5 @@ impl SignInUseCasePort for SignInUseCase {
                 None => Ok(None),
             }
         })
-    }
-}
-
-impl Clone for SignInUseCase {
-    fn clone(&self) -> Self {
-        Self {
-            hasher_adapter: self.hasher_adapter.clone_box(),
-            auth_adapter: self.auth_adapter.clone_box(),
-            sign_in_repository: self.sign_in_repository.clone_box(),
-        }
     }
 }

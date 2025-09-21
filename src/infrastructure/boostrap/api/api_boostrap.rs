@@ -1,7 +1,5 @@
 use std::{net::SocketAddr, pin::Pin, sync::Arc};
 
-use axum::Router;
-use sqlx::{Pool, Postgres};
 use tokio::net::TcpListener;
 
 use crate::{
@@ -13,11 +11,7 @@ use crate::{
         gateways::database::database_gateway::DatabaseGateway,
     },
     presentation::{
-        controllers::auth::{
-            sign_in_controller::SignInController, sign_up_controller::SignUpController,
-        },
-        ports::router::router_port::RouterPort,
-        routers::core::core_router::CoreRouter,
+        ports::router::router_port::RouterPort, routers::core::core_router::CoreRouter,
     },
 };
 
@@ -51,36 +45,33 @@ impl ApiBootstrapPort for ApiBootstrap {
                 }
             };
 
-            let database_gateway: DatabaseGateway = DatabaseGateway;
+            let database_gateway = DatabaseGateway;
 
-            let database_pool: Arc<Pool<Postgres>> = Arc::new(
-                database_gateway
-                    .initialize_pool()
-                    .await
-                    .unwrap_or_else(|err| {
-                        tracing::error!("{}", &err.to_string());
+            let database_pool = Arc::new(database_gateway.initialize_pool().await.unwrap_or_else(
+                |err| {
+                    tracing::error!("{}", &err.to_string());
 
-                        std::process::exit(1)
-                    }),
-            );
+                    std::process::exit(1)
+                },
+            ));
 
             tracing::info!("Database pool successfully initialized.");
 
-            let server_host: String = std::env::var("SERVER_HOST").unwrap_or_else(|err| {
+            let server_host = std::env::var("SERVER_HOST").unwrap_or_else(|err| {
                 tracing::error!("{}", &err.to_string());
 
                 std::process::exit(1)
             });
 
-            let server_port: String = std::env::var("SERVER_PORT").unwrap_or_else(|err| {
+            let server_port = std::env::var("SERVER_PORT").unwrap_or_else(|err| {
                 tracing::error!("{}", &err.to_string());
 
                 std::process::exit(1)
             });
 
-            let server_address: String = format!("{}:{}", server_host, server_port);
+            let server_address = format!("{}:{}", server_host, server_port);
 
-            let tcp_listener: TcpListener = TcpListener::bind(server_address.clone())
+            let tcp_listener = TcpListener::bind(server_address.clone())
                 .await
                 .map_err(|err| {
                     tracing::error!("{}", &err.to_string());
@@ -88,24 +79,17 @@ impl ApiBootstrapPort for ApiBootstrap {
                     std::process::exit(1)
                 })?;
 
-            let server_started_message: String =
+            let server_started_message =
                 format!("Server successfully started at '{}'.", server_address);
 
             tracing::info!("{}", server_started_message);
 
-            let sign_up_controller_factory: SignUpControllerFactory =
-                SignUpControllerFactory::new(database_pool.clone());
-
-            let sign_up_controller: SignUpController = sign_up_controller_factory.build();
-
-            let sign_in_controller_factory: SignInControllerFactory =
-                SignInControllerFactory::new(database_pool);
-
-            let sign_in_controller: SignInController = sign_in_controller_factory.build();
-
-            let core_router: CoreRouter = CoreRouter::new(sign_up_controller, sign_in_controller);
-
-            let axum_router: Router = core_router.register_routes();
+            let sign_up_controller_factory = SignUpControllerFactory::new(database_pool.clone());
+            let sign_up_controller = sign_up_controller_factory.build();
+            let sign_in_controller_factory = SignInControllerFactory::new(database_pool);
+            let sign_in_controller = sign_in_controller_factory.build();
+            let core_router = CoreRouter::new(sign_up_controller, sign_in_controller);
+            let axum_router = core_router.register_routes();
 
             axum::serve(
                 tcp_listener,

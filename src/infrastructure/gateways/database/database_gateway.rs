@@ -35,7 +35,7 @@ impl DatabaseGateway {
 
     pub fn initialize_pool(&self) -> InitializePoolFuture {
         Box::pin(async move {
-            let pool: Pool<Postgres> = PgPoolOptions::new()
+            let pool = PgPoolOptions::new()
                 .max_connections(5)
                 .connect("postgres://postgres:1234@localhost:5432/test")
                 .await

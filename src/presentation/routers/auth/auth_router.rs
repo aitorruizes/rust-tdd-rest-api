@@ -9,20 +9,21 @@ use axum::{
 
 use crate::{
     infrastructure::adapters::axum::axum_handler_adapter::AxumHandlerAdapter,
-    presentation::{
-        controllers::auth::{
-            sign_in_controller::SignInController, sign_up_controller::SignUpController,
-        },
-        ports::router::router_port::RouterPort,
+    presentation::ports::{
+        controller::controller_port::ControllerPort, router::router_port::RouterPort,
     },
 };
 
-pub struct AuthRouter {
+pub struct AuthRouter<SignUpController, SignInController> {
     sign_up_controller: SignUpController,
     sign_in_controller: SignInController,
 }
 
-impl AuthRouter {
+impl<SignUpController, SignInController> AuthRouter<SignUpController, SignInController>
+where
+    SignUpController: ControllerPort + Clone + Send + Sync,
+    SignInController: ControllerPort + Clone + Send + Sync,
+{
     pub fn new(sign_up_controller: SignUpController, sign_in_controller: SignInController) -> Self {
         AuthRouter {
             sign_up_controller,
@@ -31,13 +32,15 @@ impl AuthRouter {
     }
 }
 
-impl RouterPort for AuthRouter {
+impl<SignUpController, SignInController> RouterPort
+    for AuthRouter<SignUpController, SignInController>
+where
+    SignUpController: ControllerPort + Clone + Send + Sync + 'static,
+    SignInController: ControllerPort + Clone + Send + Sync + 'static,
+{
     fn register_routes(self) -> Router {
-        let sign_up_controller_adapter: AxumHandlerAdapter =
-            AxumHandlerAdapter::new(Box::new(self.sign_up_controller));
-
-        let sign_in_controller_adapter: AxumHandlerAdapter =
-            AxumHandlerAdapter::new(Box::new(self.sign_in_controller));
+        let sign_up_controller_adapter = AxumHandlerAdapter::new(self.sign_up_controller);
+        let sign_in_controller_adapter = AxumHandlerAdapter::new(self.sign_in_controller);
 
         Router::new()
             .route(

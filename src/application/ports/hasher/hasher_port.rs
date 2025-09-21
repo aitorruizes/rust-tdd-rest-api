@@ -19,26 +19,7 @@ impl std::fmt::Display for HasherError {
 
 impl std::error::Error for HasherError {}
 
-pub trait HasherPort: HasherPortClone + Send + Sync {
+pub trait HasherPort: Send + Sync {
     fn hash(&self, password: &str) -> Result<String, HasherError>;
     fn verify(&self, password: &str, password_hash: &str) -> Result<bool, HasherError>;
-}
-
-pub trait HasherPortClone {
-    fn clone_box(&self) -> Box<dyn HasherPort + Send + Sync>;
-}
-
-impl<T> HasherPortClone for T
-where
-    T: HasherPort + Clone + Send + Sync + 'static,
-{
-    fn clone_box(&self) -> Box<dyn HasherPort + Send + Sync> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn HasherPort + Send + Sync> {
-    fn clone(&self) -> Box<dyn HasherPort + Send + Sync> {
-        self.as_ref().clone_box()
-    }
 }

@@ -1,4 +1,4 @@
-use serde_json::{Value, json};
+use serde_json::json;
 
 #[derive(Clone)]
 pub struct SignInValidator;
@@ -9,9 +9,8 @@ impl SignInValidator {
     }
 
     pub fn validate(&self, fields: serde_json::Value) -> Result<(), serde_json::Value> {
-        let mut errors: Vec<Value> = vec![];
-
-        let required_fields: [&'static str; 2] = ["email", "password"];
+        let mut errors = vec![];
+        let required_fields = ["email", "password"];
 
         for &field in &required_fields {
             match fields.get(field) {

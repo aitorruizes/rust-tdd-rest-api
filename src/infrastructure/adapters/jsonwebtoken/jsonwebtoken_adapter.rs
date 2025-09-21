@@ -23,18 +23,18 @@ impl JsonWebTokenAdapter {
 
 impl AuthPort for JsonWebTokenAdapter {
     fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError> {
-        let expiration: u64 = SystemTime::now()
+        let expiration = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs()
             + 5;
 
-        let claims: Claims = Claims {
+        let claims = Claims {
             sub: user_id.to_string(),
             exp: expiration as usize,
         };
 
-        let auth_token: String = encode(
+        let auth_token = encode(
             &Header::default(),
             &claims,
             &EncodingKey::from_secret("asdasdas".as_ref()),

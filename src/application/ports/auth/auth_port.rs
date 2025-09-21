@@ -33,26 +33,7 @@ impl std::fmt::Display for AuthError {
 
 impl std::error::Error for AuthError {}
 
-pub trait AuthPort: AuthPortClone + Send + Sync {
+pub trait AuthPort: Send + Sync {
     fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError>;
     fn verify_auth_token(&self, token: &str) -> Result<(), AuthError>;
-}
-
-pub trait AuthPortClone {
-    fn clone_box(&self) -> Box<dyn AuthPort + Send + Sync>;
-}
-
-impl<T> AuthPortClone for T
-where
-    T: AuthPort + Clone + Send + Sync + 'static,
-{
-    fn clone_box(&self) -> Box<dyn AuthPort + Send + Sync> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn AuthPort + Send + Sync> {
-    fn clone(&self) -> Box<dyn AuthPort + Send + Sync> {
-        self.as_ref().clone_box()
-    }
 }

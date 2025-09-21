@@ -3,14 +3,7 @@ use std::sync::Arc;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::{
-        ports::{
-            auth::auth_port::AuthPort, hasher::hasher_port::HasherPort,
-            pattern_matching::pattern_matching_port::PatternMatchingPort,
-            repositories::sign_in_repository_port::SignInRepositoryPort,
-        },
-        use_cases::auth::sign_in_use_case::{SignInUseCase, SignInUseCasePort},
-    },
+    application::use_cases::auth::sign_in_use_case::SignInUseCase,
     infrastructure::{
         adapters::{
             bcrypt::bcrypt_adapter::BcryptAdapter,
@@ -33,20 +26,18 @@ impl SignInControllerFactory {
         SignInControllerFactory { database_pool }
     }
 
-    pub fn build(&self) -> SignInController {
-        let hasher_adapter: Box<dyn HasherPort> = Box::new(BcryptAdapter);
-        let auth_adapter: Box<dyn AuthPort> = Box::new(JsonWebTokenAdapter);
-        let sign_in_validator: SignInValidator = SignInValidator;
-        let pattern_matching_adapter: Box<dyn PatternMatchingPort> = Box::new(RegexAdapter);
-
-        let sign_in_repository: Box<dyn SignInRepositoryPort> =
-            Box::new(SignInRepository::new(self.database_pool.clone()));
-
-        let sign_in_use_case: Box<dyn SignInUseCasePort> = Box::new(SignInUseCase::new(
-            hasher_adapter,
-            auth_adapter,
-            sign_in_repository,
-        ));
+    pub fn build(
+        &self,
+    ) -> SignInController<
+        RegexAdapter,
+        SignInUseCase<BcryptAdapter, JsonWebTokenAdapter, SignInRepository>,
+    > {
+        let hasher_adapter = BcryptAdapter;
+        let auth_adapter = JsonWebTokenAdapter;
+        let sign_in_validator = SignInValidator;
+        let pattern_matching_adapter = RegexAdapter;
+        let sign_in_repository = SignInRepository::new(self.database_pool.clone());
+        let sign_in_use_case = SignInUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
 
         SignInController::new(
             sign_in_validator,

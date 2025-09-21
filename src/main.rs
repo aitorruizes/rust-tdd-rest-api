@@ -155,7 +155,7 @@ pub mod presentation {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let api_boostrap: ApiBootstrap = ApiBootstrap;
+    let api_boostrap = ApiBootstrap;
 
     api_boostrap.setup().await
 }

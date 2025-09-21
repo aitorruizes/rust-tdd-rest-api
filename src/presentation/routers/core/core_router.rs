@@ -6,19 +6,20 @@ use tower_helmet::HelmetLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::presentation::{
-    controllers::auth::{
-        sign_in_controller::SignInController, sign_up_controller::SignUpController,
-    },
-    ports::router::router_port::RouterPort,
+    ports::{controller::controller_port::ControllerPort, router::router_port::RouterPort},
     routers::{auth::auth_router::AuthRouter, private::private_router::PrivateRouter},
 };
 
-pub struct CoreRouter {
+pub struct CoreRouter<SignUpController, SignInController> {
     sign_up_controller: SignUpController,
     sign_in_controller: SignInController,
 }
 
-impl CoreRouter {
+impl<SignUpController, SignInController> CoreRouter<SignUpController, SignInController>
+where
+    SignUpController: ControllerPort + Clone + Send + Sync,
+    SignInController: ControllerPort + Clone + Send + Sync,
+{
     pub fn new(sign_up_controller: SignUpController, sign_in_controller: SignInController) -> Self {
         CoreRouter {
             sign_up_controller,
@@ -27,12 +28,15 @@ impl CoreRouter {
     }
 }
 
-impl RouterPort for CoreRouter {
+impl<SignUpController, SignInController> RouterPort
+    for CoreRouter<SignUpController, SignInController>
+where
+    SignUpController: ControllerPort + Clone + Send + Sync + 'static,
+    SignInController: ControllerPort + Clone + Send + Sync + 'static,
+{
     fn register_routes(self) -> Router {
-        let auth_router: AuthRouter =
-            AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
-
-        let private_router: PrivateRouter = PrivateRouter::new();
+        let auth_router = AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
+        let private_router = PrivateRouter::new();
         let trace_layer_middleware = TraceLayer::new_for_http();
 
         let governor_config = GovernorConfigBuilder::default()
@@ -70,7 +74,7 @@ impl RouterPort for CoreRouter {
                     .into_response(),
             });
 
-        let helmet_middleware: HelmetLayer = HelmetLayer::with_defaults();
+        let helmet_middleware = HelmetLayer::with_defaults();
 
         Router::new()
             .nest("/api/v1", auth_router.register_routes())

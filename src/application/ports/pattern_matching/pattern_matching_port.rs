@@ -30,27 +30,8 @@ impl std::fmt::Display for RegexError {
 
 impl std::error::Error for RegexError {}
 
-pub trait PatternMatchingPort: PatternMatchingPortClone + Send + Sync {
+pub trait PatternMatchingPort: Send + Sync {
     fn is_valid_email(&self, email: &str) -> Result<bool, RegexError>;
     fn is_valid_email_domain(&self, email: &str) -> Result<bool, RegexError>;
     fn is_valid_password(&self, password: &str) -> Result<bool, RegexError>;
-}
-
-pub trait PatternMatchingPortClone {
-    fn clone_box(&self) -> Box<dyn PatternMatchingPort + Send + Sync>;
-}
-
-impl<T> PatternMatchingPortClone for T
-where
-    T: PatternMatchingPort + Clone + Send + Sync + 'static,
-{
-    fn clone_box(&self) -> Box<dyn PatternMatchingPort + Send + Sync> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn PatternMatchingPort + Send + Sync> {
-    fn clone(&self) -> Box<dyn PatternMatchingPort + Send + Sync> {
-        self.as_ref().clone_box()
-    }
 }
