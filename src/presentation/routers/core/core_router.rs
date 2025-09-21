@@ -10,7 +10,7 @@ use crate::presentation::{
         sign_in_controller::SignInController, sign_up_controller::SignUpController,
     },
     ports::router::router_port::RouterPort,
-    routers::auth::auth_router::AuthRouter,
+    routers::{auth::auth_router::AuthRouter, private::private_router::PrivateRouter},
 };
 
 pub struct CoreRouter {
@@ -32,6 +32,7 @@ impl RouterPort for CoreRouter {
         let auth_router: AuthRouter =
             AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
 
+        let private_router: PrivateRouter = PrivateRouter::new();
         let trace_layer_middleware = TraceLayer::new_for_http();
 
         let governor_config = GovernorConfigBuilder::default()
@@ -73,6 +74,7 @@ impl RouterPort for CoreRouter {
 
         Router::new()
             .nest("/api/v1", auth_router.register_routes())
+            .nest("/api/v1", private_router.register_routes())
             .layer(
                 ServiceBuilder::new()
                     .layer(trace_layer_middleware)

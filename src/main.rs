@@ -140,6 +140,16 @@ pub mod presentation {
         pub mod core {
             pub mod core_router;
         }
+
+        pub mod private {
+            pub mod private_router;
+        }
+    }
+
+    pub mod middlewares {
+        pub mod auth {
+            pub mod auth_middleware;
+        }
     }
 }
 

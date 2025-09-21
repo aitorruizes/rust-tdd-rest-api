@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use jsonwebtoken::{EncodingKey, Header, encode};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -27,7 +27,7 @@ impl AuthPort for JsonWebTokenAdapter {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs()
-            + 24 * 3600;
+            + 5;
 
         let claims: Claims = Claims {
             sub: user_id.to_string(),
@@ -44,6 +44,25 @@ impl AuthPort for JsonWebTokenAdapter {
         })?;
 
         Ok(auth_token)
+    }
+
+    fn verify_auth_token(&self, token: &str) -> Result<(), AuthError> {
+        let mut validation = Validation::new(Algorithm::HS256);
+
+        validation.leeway = 5;
+        validation.validate_exp = true;
+
+        decode::<Claims>(
+            token,
+            &DecodingKey::from_secret("asdasdas".as_ref()),
+            &validation,
+        )
+        .map(|_| ())
+        .map_err(|err| match err.kind() {
+            jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::ExpiredTokenError,
+            jsonwebtoken::errors::ErrorKind::InvalidToken => AuthError::InvalidTokenError,
+            _ => AuthError::UnexpectedError,
+        })
     }
 }
 
