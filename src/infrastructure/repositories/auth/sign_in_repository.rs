@@ -15,8 +15,9 @@ pub struct SignInRepository {
 }
 
 impl SignInRepository {
-    pub fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
-        SignInRepository { database_pool }
+    #[must_use]
+    pub const fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
+        Self { database_pool }
     }
 }
 

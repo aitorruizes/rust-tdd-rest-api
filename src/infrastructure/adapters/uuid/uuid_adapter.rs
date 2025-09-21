@@ -6,8 +6,9 @@ use crate::application::ports::id_generator::id_generator_port::IdGeneratorPort;
 pub struct UuidAdapter;
 
 impl UuidAdapter {
-    pub fn new() -> Self {
-        UuidAdapter
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 

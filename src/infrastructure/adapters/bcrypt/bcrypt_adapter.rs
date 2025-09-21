@@ -4,8 +4,9 @@ use crate::application::ports::hasher::hasher_port::{HasherError, HasherPort};
 pub struct BcryptAdapter;
 
 impl BcryptAdapter {
-    pub fn new() -> Self {
-        BcryptAdapter
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 

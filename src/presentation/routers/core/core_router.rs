@@ -20,8 +20,12 @@ where
     SignUpController: ControllerPort + Clone + Send + Sync,
     SignInController: ControllerPort + Clone + Send + Sync,
 {
-    pub fn new(sign_up_controller: SignUpController, sign_in_controller: SignInController) -> Self {
-        CoreRouter {
+    #[must_use]
+    pub const fn new(
+        sign_up_controller: SignUpController,
+        sign_in_controller: SignInController,
+    ) -> Self {
+        Self {
             sign_up_controller,
             sign_in_controller,
         }

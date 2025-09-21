@@ -1,3 +1,7 @@
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+
 use crate::infrastructure::boostrap::api::api_boostrap::{ApiBootstrap, ApiBootstrapPort};
 
 pub mod domain {
@@ -130,6 +134,10 @@ pub mod presentation {
         pub mod router {
             pub mod router_port;
         }
+
+        pub mod validator {
+            pub mod validator_port;
+        }
     }
 
     pub mod routers {
@@ -149,6 +157,13 @@ pub mod presentation {
     pub mod middlewares {
         pub mod auth {
             pub mod auth_middleware;
+        }
+    }
+
+    pub mod helpers {
+        pub mod http {
+            pub mod http_body_helper;
+            pub mod http_response_helper;
         }
     }
 }

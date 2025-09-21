@@ -9,7 +9,7 @@ use crate::application::{
     },
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SignInUseCaseError {
     HasherError(HasherError),
     AuthError(AuthError),
@@ -19,9 +19,9 @@ pub enum SignInUseCaseError {
 impl std::fmt::Display for SignInUseCaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SignInUseCaseError::HasherError(error) => write!(f, "{}", error),
-            SignInUseCaseError::AuthError(error) => write!(f, "{}", error),
-            SignInUseCaseError::DatabaseError(error) => write!(f, "{}", error),
+            Self::HasherError(error) => write!(f, "{error}"),
+            Self::AuthError(error) => write!(f, "{error}"),
+            Self::DatabaseError(error) => write!(f, "{error}"),
         }
     }
 }
@@ -29,9 +29,9 @@ impl std::fmt::Display for SignInUseCaseError {
 impl std::error::Error for SignInUseCaseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            SignInUseCaseError::HasherError(error) => Some(error),
-            SignInUseCaseError::AuthError(error) => Some(error),
-            SignInUseCaseError::DatabaseError(error) => Some(error),
+            Self::HasherError(error) => Some(error),
+            Self::AuthError(error) => Some(error),
+            Self::DatabaseError(error) => Some(error),
         }
     }
 }
@@ -61,7 +61,7 @@ where
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
     Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
 {
-    pub fn new(
+    pub const fn new(
         hasher_adapter: HasherAdapter,
         auth_adapter: AuthAdapter,
         sign_in_repository: Repository,

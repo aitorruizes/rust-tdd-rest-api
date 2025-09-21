@@ -8,8 +8,9 @@ use crate::application::ports::pattern_matching::pattern_matching_port::{
 pub struct RegexAdapter;
 
 impl RegexAdapter {
-    pub fn new() -> Self {
-        RegexAdapter
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 

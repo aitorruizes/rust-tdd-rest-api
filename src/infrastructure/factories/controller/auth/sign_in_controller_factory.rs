@@ -12,8 +12,13 @@ use crate::{
         },
         repositories::auth::sign_in_repository::SignInRepository,
     },
-    presentation::controllers::auth::{
-        sign_in_controller::SignInController, sign_in_validator::SignInValidator,
+    presentation::{
+        controllers::auth::{
+            sign_in_controller::SignInController, sign_in_validator::SignInValidator,
+        },
+        helpers::http::{
+            http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
+        },
     },
 };
 
@@ -22,27 +27,33 @@ pub struct SignInControllerFactory {
 }
 
 impl SignInControllerFactory {
-    pub fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
-        SignInControllerFactory { database_pool }
+    #[must_use]
+    pub const fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
+        Self { database_pool }
     }
 
+    #[must_use]
     pub fn build(
         &self,
     ) -> SignInController<
+        SignInValidator,
         RegexAdapter,
         SignInUseCase<BcryptAdapter, JsonWebTokenAdapter, SignInRepository>,
     > {
         let hasher_adapter = BcryptAdapter;
         let auth_adapter = JsonWebTokenAdapter;
-        let sign_in_validator = SignInValidator;
         let pattern_matching_adapter = RegexAdapter;
         let sign_in_repository = SignInRepository::new(self.database_pool.clone());
         let sign_in_use_case = SignInUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
+        let sign_in_validator = SignInValidator;
+        let http_response_helper = HttpResponseHelper::new();
+        let http_body_helper = HttpBodyHelper::new(sign_in_validator, http_response_helper.clone());
 
         SignInController::new(
-            sign_in_validator,
+            http_body_helper,
             pattern_matching_adapter,
             sign_in_use_case,
+            http_response_helper,
         )
     }
 }

@@ -10,11 +10,10 @@ pub enum DatabaseError {
 impl std::fmt::Display for DatabaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DatabaseError::Pool { message } => {
+            Self::Pool { message } => {
                 write!(
                     f,
-                    "An error occurred while initializing database pool: {}.",
-                    message
+                    "An error occurred while initializing database pool: {message}.",
                 )
             }
         }
@@ -29,10 +28,12 @@ pub type InitializePoolFuture =
 pub struct DatabaseGateway;
 
 impl DatabaseGateway {
-    pub fn new() -> Self {
-        DatabaseGateway
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 
+    #[must_use]
     pub fn initialize_pool(&self) -> InitializePoolFuture {
         Box::pin(async move {
             let pool = PgPoolOptions::new()

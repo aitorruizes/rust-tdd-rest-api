@@ -24,8 +24,9 @@ pub trait ApiBootstrapPort {
 }
 
 impl ApiBootstrap {
-    pub fn new() -> Self {
-        ApiBootstrap
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 
@@ -43,7 +44,7 @@ impl ApiBootstrapPort for ApiBootstrap {
 
                     std::process::exit(1)
                 }
-            };
+            }
 
             let database_gateway = DatabaseGateway;
 
@@ -69,7 +70,7 @@ impl ApiBootstrapPort for ApiBootstrap {
                 std::process::exit(1)
             });
 
-            let server_address = format!("{}:{}", server_host, server_port);
+            let server_address = format!("{server_host}:{server_port}");
 
             let tcp_listener = TcpListener::bind(server_address.clone())
                 .await
@@ -80,7 +81,7 @@ impl ApiBootstrapPort for ApiBootstrap {
                 })?;
 
             let server_started_message =
-                format!("Server successfully started at '{}'.", server_address);
+                format!("Server successfully started at '{server_address}'.");
 
             tracing::info!("{}", server_started_message);
 

@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct SignUpDto {
     pub id: Option<String>,
     pub first_name: String,
@@ -10,7 +10,13 @@ pub struct SignUpDto {
 }
 
 impl SignUpDto {
-    pub fn new(first_name: String, last_name: String, email: String, password: String) -> Self {
+    #[must_use]
+    pub const fn new(
+        first_name: String,
+        last_name: String,
+        email: String,
+        password: String,
+    ) -> Self {
         Self {
             id: None,
             first_name,

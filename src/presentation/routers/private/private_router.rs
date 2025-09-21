@@ -10,8 +10,9 @@ use crate::{
 pub struct PrivateRouter;
 
 impl PrivateRouter {
-    pub fn new() -> Self {
-        PrivateRouter
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 
@@ -22,8 +23,6 @@ impl RouterPort for PrivateRouter {
         Router::new()
             .route("/home", get(|| async move { "Hello our dear customer!" }))
             .layer(middleware::from_fn({
-                let auth_middleware = auth_middleware.clone();
-
                 move |req, next| {
                     let auth_middleware = auth_middleware.clone();
 

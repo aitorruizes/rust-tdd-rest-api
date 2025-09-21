@@ -9,147 +9,134 @@ use crate::{
         use_cases::auth::sign_in_use_case::{SignInUseCaseError, SignInUseCasePort},
     },
     presentation::{
-        controllers::auth::sign_in_validator::SignInValidator,
         dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
-        ports::controller::controller_port::ControllerPort,
+        helpers::http::{
+            http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
+        },
+        ports::{
+            controller::controller_port::ControllerPort, validator::validator_port::ValidatorPort,
+        },
     },
 };
 
 #[derive(Clone)]
-pub struct SignInController<P, U> {
-    sign_in_validator: SignInValidator,
-    pattern_matching_adapter: P,
-    sign_in_use_case: U,
+pub struct SignInController<Validator, PatternMatchingAdapter, UseCase> {
+    http_body_helper: HttpBodyHelper<Validator>,
+    pattern_matching_adapter: PatternMatchingAdapter,
+    sign_in_use_case: UseCase,
+    http_response_helper: HttpResponseHelper,
 }
 
-impl<P, U> SignInController<P, U>
+impl<Validator, PatternMatchingAdapter, UseCase>
+    SignInController<Validator, PatternMatchingAdapter, UseCase>
 where
-    P: PatternMatchingPort + Clone + Send + Sync,
-    U: SignInUseCasePort + Clone + Send + Sync,
+    Validator: ValidatorPort + Clone + Send + Sync,
+    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
+    UseCase: SignInUseCasePort + Clone + Send + Sync,
 {
-    pub fn new(
-        sign_in_validator: SignInValidator,
-        pattern_matching_adapter: P,
-        sign_in_use_case: U,
+    pub const fn new(
+        http_body_helper: HttpBodyHelper<Validator>,
+        pattern_matching_adapter: PatternMatchingAdapter,
+        sign_in_use_case: UseCase,
+        http_response_helper: HttpResponseHelper,
     ) -> Self {
-        SignInController {
-            sign_in_validator,
+        Self {
+            http_body_helper,
             pattern_matching_adapter,
             sign_in_use_case,
+            http_response_helper,
         }
     }
 }
 
-impl<P, U> ControllerPort for SignInController<P, U>
+impl<Validator, PatternMatchingAdapter, UseCase> ControllerPort
+    for SignInController<Validator, PatternMatchingAdapter, UseCase>
 where
-    P: PatternMatchingPort + Clone + Send + Sync + 'static,
-    U: SignInUseCasePort + Clone + Send + Sync + 'static,
+    Validator: ValidatorPort + Clone + Send + Sync,
+    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
+    UseCase: SignInUseCasePort + Clone + Send + Sync,
 {
     fn handle(
         &self,
         http_request_dto: HttpRequestDto,
     ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>> {
         Box::pin(async move {
-            let body = match http_request_dto.body {
-                Some(body) => body,
-                None => {
-                    return HttpResponseDto {
-                        status_code: 400,
-                        body: Some(serde_json::json!({
-                            "error_code": "missing_request_body",
-                            "error_message": "a request body was not provided"
-                        })),
-                    };
-                }
-            };
+            self.http_body_helper
+                .validate_request_body(http_request_dto.body.clone());
 
-            if let Err(errors) = self.sign_in_validator.validate(body.clone()) {
-                return HttpResponseDto {
-                    status_code: 400,
-                    body: Some(json!({
-                        "error_code": "invalid_request_body",
-                        "error_message": "some fields are not valid",
-                        "details": errors
-                    })),
-                };
-            }
+            let extracted_body = http_request_dto.body.unwrap();
 
             let is_valid_email = self
                 .pattern_matching_adapter
-                .is_valid_email(body["email"].as_str().unwrap());
+                .is_valid_email(extracted_body["email"].as_str().unwrap());
 
             match is_valid_email {
-                Ok(result) => match result {
-                    true => {}
-                    false => {
-                        return HttpResponseDto {
-                            status_code: 400,
-                            body: Some(json!({
-                                "error_code": "invalid_email",
-                                "error_message": RegexError::InvalidEmail.to_string(),
-                            })),
-                        };
+                Ok(result) => {
+                    if !result {
+                        let body = json!({
+                            "error_code": "invalid_email",
+                            "error_message": RegexError::InvalidEmail.to_string(),
+                        });
+
+                        return self.http_response_helper.bad_request(Some(body));
                     }
-                },
+                }
                 Err(err) => {
-                    return HttpResponseDto {
-                        status_code: 400,
-                        body: Some(json!({
-                            "error_code": "invalid_regex",
-                            "error_message": err.to_string(),
-                        })),
-                    };
+                    let body = json!({
+                        "error_code": "invalid_regex",
+                        "error_message": err.to_string(),
+                    });
+
+                    return self.http_response_helper.internal_server_error(Some(body));
                 }
             }
 
             let is_valid_email_domain = self
                 .pattern_matching_adapter
-                .is_valid_email_domain(body["email"].as_str().unwrap());
+                .is_valid_email_domain(extracted_body["email"].as_str().unwrap());
 
             match is_valid_email_domain {
-                Ok(result) => match result {
-                    true => {}
-                    false => {
-                        return HttpResponseDto {
-                            status_code: 400,
-                            body: Some(json!({
-                                "error_code": "invalid_email_domain",
-                                "error_message": RegexError::InvalidEmailDomain.to_string(),
-                            })),
-                        };
+                Ok(result) => {
+                    if !result {
+                        let body = Some(json!({
+                            "error_code": "invalid_email_domain",
+                            "error_message": RegexError::InvalidEmailDomain.to_string(),
+                        }));
+
+                        return self.http_response_helper.bad_request(body);
                     }
-                },
+                }
                 Err(err) => {
-                    return HttpResponseDto {
-                        status_code: 400,
-                        body: Some(json!({
-                            "error_code": "invalid_regex",
-                            "error_message": err.to_string(),
-                        })),
-                    };
+                    let body = json!({
+                        "error_code": "invalid_regex",
+                        "error_message": err.to_string(),
+                    });
+
+                    return self.http_response_helper.internal_server_error(Some(body));
                 }
             }
 
             let sign_in_dto = SignInDto::new(
-                body["email"].as_str().unwrap().to_string(),
-                body["password"].as_str().unwrap().to_string(),
+                extracted_body["email"].as_str().unwrap().to_string(),
+                extracted_body["password"].as_str().unwrap().to_string(),
             );
 
             match self.sign_in_use_case.perform(sign_in_dto).await {
-                Ok(result) => match result {
-                    Some(generated_auth_token) => HttpResponseDto {
-                        status_code: 200,
-                        body: Some(
-                            serde_json::json!({ "authorization_token": generated_auth_token }),
-                        ),
+                Ok(result) => result.map_or_else(
+                    || {
+                        let body = json!({
+                            "error_code": "invalid credentials",
+                            "error_message": "the provided credentials are invalid"
+                        });
+
+                        self.http_response_helper.unauthorized(Some(body))
                     },
-                    None => HttpResponseDto {
-                        status_code: 401,
-                        body: Some(
-                            serde_json::json!({ "error_code": "invalid credentials", "error_message": "the provided credentials are invalid" }),
-                        ),
+                    |generated_auth_token| {
+                        let body = json!({ "authorization_token": generated_auth_token });
+
+                        self.http_response_helper.ok(Some(body))
                     },
-                },
+                ),
                 Err(err) => {
                     let (error_code, error_message) = match err {
                         SignInUseCaseError::HasherError(error) => {
@@ -165,7 +152,7 @@ where
 
                     HttpResponseDto {
                         status_code: 400,
-                        body: Some(serde_json::json!({
+                        body: Some(json!({
                             "error_code": error_code,
                             "error_message": error_message
                         })),

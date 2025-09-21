@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use crate::domain::entities::user::user_entity::UserEntity;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SignUpRepositoryError {
     InsertError { message: String },
 }
@@ -10,8 +10,8 @@ pub enum SignUpRepositoryError {
 impl std::fmt::Display for SignUpRepositoryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SignUpRepositoryError::InsertError { message } => {
-                write!(f, "insert Error: {}", message)
+            Self::InsertError { message } => {
+                write!(f, "insert Error: {message}")
             }
         }
     }

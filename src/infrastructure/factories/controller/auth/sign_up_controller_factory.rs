@@ -11,8 +11,13 @@ use crate::{
         },
         repositories::auth::sign_up_repository::SignUpRepository,
     },
-    presentation::controllers::auth::{
-        sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
+    presentation::{
+        controllers::auth::{
+            sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
+        },
+        helpers::http::{
+            http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
+        },
     },
 };
 
@@ -21,27 +26,35 @@ pub struct SignUpControllerFactory {
 }
 
 impl SignUpControllerFactory {
-    pub fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
-        SignUpControllerFactory { database_pool }
+    #[must_use]
+    pub const fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
+        Self { database_pool }
     }
 
+    #[must_use]
     pub fn build(
         &self,
-    ) -> SignUpController<SignUpUseCase<BcryptAdapter, UuidAdapter, SignUpRepository>, RegexAdapter>
-    {
+    ) -> SignUpController<
+        SignUpValidator,
+        SignUpUseCase<BcryptAdapter, UuidAdapter, SignUpRepository>,
+        RegexAdapter,
+    > {
         let sign_up_validator = SignUpValidator;
         let pattern_matching_adapter = RegexAdapter;
         let hasher_adapter = BcryptAdapter;
         let id_generator_adapter = UuidAdapter;
         let sign_up_repository = SignUpRepository::new(self.database_pool.clone());
+        let http_response_helper = HttpResponseHelper::new();
+        let http_body_helper = HttpBodyHelper::new(sign_up_validator, http_response_helper.clone());
 
         let sign_up_use_case =
             SignUpUseCase::new(hasher_adapter, id_generator_adapter, sign_up_repository);
 
         SignUpController::new(
-            sign_up_validator,
+            http_body_helper,
             pattern_matching_adapter,
             sign_up_use_case,
+            http_response_helper,
         )
     }
 }

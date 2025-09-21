@@ -2,7 +2,7 @@ use std::pin::Pin;
 
 use crate::domain::entities::user::user_entity::UserEntity;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SignInRepositoryError {
     FindByEmailError { message: String },
 }
@@ -10,8 +10,8 @@ pub enum SignInRepositoryError {
 impl std::fmt::Display for SignInRepositoryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SignInRepositoryError::FindByEmailError { message } => {
-                write!(f, "fetch by e-mail error: {}", message)
+            Self::FindByEmailError { message } => {
+                write!(f, "fetch by e-mail error: {message}")
             }
         }
     }

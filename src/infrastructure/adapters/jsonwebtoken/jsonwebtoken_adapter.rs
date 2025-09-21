@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::application::ports::auth::auth_port::{AuthError, AuthPort};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(clippy::cast_possible_truncation)]
 struct Claims {
     sub: String,
     exp: usize,
@@ -16,22 +17,26 @@ struct Claims {
 pub struct JsonWebTokenAdapter;
 
 impl JsonWebTokenAdapter {
-    pub fn new() -> Self {
-        JsonWebTokenAdapter
+    #[must_use]
+    pub const fn new() -> Self {
+        Self
     }
 }
 
 impl AuthPort for JsonWebTokenAdapter {
     fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError> {
-        let expiration = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            + 5;
+        let expiration = usize::try_from(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                + 5,
+        )
+        .map_err(|_| AuthError::UnexpectedError)?;
 
         let claims = Claims {
             sub: user_id.to_string(),
-            exp: expiration as usize,
+            exp: expiration,
         };
 
         let auth_token = encode(
