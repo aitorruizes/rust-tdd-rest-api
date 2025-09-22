@@ -3,7 +3,7 @@ use std::sync::Arc;
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::use_cases::auth::sign_in_use_case::SignInUseCase,
+    application::use_cases::user::get_user_by_email_use_case::GetUserByEmailUseCase,
     infrastructure::{
         adapters::{
             bcrypt::bcrypt_adapter::BcryptAdapter,
@@ -38,13 +38,14 @@ impl SignInControllerFactory {
     ) -> SignInController<
         SignInValidator,
         RegexAdapter,
-        SignInUseCase<BcryptAdapter, JsonWebTokenAdapter, GetUserByEmailRepository>,
+        GetUserByEmailUseCase<BcryptAdapter, JsonWebTokenAdapter, GetUserByEmailRepository>,
     > {
         let hasher_adapter = BcryptAdapter;
         let auth_adapter = JsonWebTokenAdapter;
         let pattern_matching_adapter = RegexAdapter;
         let sign_in_repository = GetUserByEmailRepository::new(self.database_pool.clone());
-        let sign_in_use_case = SignInUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
+        let sign_in_use_case =
+            GetUserByEmailUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
         let sign_in_validator = SignInValidator;
         let http_response_helper = HttpResponseHelper::new();
         let http_body_helper = HttpBodyHelper::new(sign_in_validator, http_response_helper.clone());

@@ -8,7 +8,9 @@ use crate::{
         ports::pattern_matching::pattern_matching_port::{
             PatternMatchingError, PatternMatchingPort,
         },
-        use_cases::auth::sign_in_use_case::{SignInUseCaseError, SignInUseCasePort},
+        use_cases::user::get_user_by_email_use_case::{
+            GetUserByEmailUseCaseError, GetUserByEmailUseCasePort,
+        },
     },
     presentation::{
         dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
@@ -34,7 +36,7 @@ impl<Validator, PatternMatchingAdapter, UseCase>
 where
     Validator: ValidatorPort + Clone + Send + Sync,
     PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: SignInUseCasePort + Clone + Send + Sync,
+    UseCase: GetUserByEmailUseCasePort + Clone + Send + Sync,
 {
     pub const fn new(
         http_body_helper: HttpBodyHelper<Validator>,
@@ -56,7 +58,7 @@ impl<Validator, PatternMatchingAdapter, UseCase> ControllerPort
 where
     Validator: ValidatorPort + Clone + Send + Sync,
     PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: SignInUseCasePort + Clone + Send + Sync,
+    UseCase: GetUserByEmailUseCasePort + Clone + Send + Sync,
 {
     fn handle(
         &self,
@@ -141,13 +143,13 @@ where
                 ),
                 Err(err) => {
                     let (error_code, error_message) = match err {
-                        SignInUseCaseError::HasherError(error) => {
+                        GetUserByEmailUseCaseError::HasherError(error) => {
                             ("use_case_error", error.to_string())
                         }
-                        SignInUseCaseError::AuthError(error) => {
+                        GetUserByEmailUseCaseError::AuthError(error) => {
                             ("use_case_error", error.to_string())
                         }
-                        SignInUseCaseError::DatabaseError(error) => {
+                        GetUserByEmailUseCaseError::DatabaseError(error) => {
                             ("repository_error", error.to_string())
                         }
                     };

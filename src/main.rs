@@ -50,11 +50,11 @@ pub mod application {
 
     pub mod use_cases {
         pub mod auth {
-            pub mod sign_in_use_case;
             pub mod sign_up_use_case;
         }
-
+        
         pub mod user {
+            pub mod get_user_by_email_use_case;
             pub mod get_user_by_id_use_case;
         }
     }
