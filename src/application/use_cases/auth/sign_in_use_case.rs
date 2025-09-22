@@ -5,7 +5,9 @@ use crate::application::{
     ports::{
         auth::auth_port::{AuthError, AuthPort},
         hasher::hasher_port::{HasherError, HasherPort},
-        repositories::sign_in_repository_port::{SignInRepositoryError, SignInRepositoryPort},
+        repositories::auth::sign_in_repository_port::{
+            SignInRepositoryError, SignInRepositoryPort,
+        },
     },
 };
 

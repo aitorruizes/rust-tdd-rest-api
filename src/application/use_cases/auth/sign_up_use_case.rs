@@ -6,7 +6,9 @@ use crate::{
         ports::{
             hasher::hasher_port::{HasherError, HasherPort},
             id_generator::id_generator_port::IdGeneratorPort,
-            repositories::sign_up_repository_port::{SignUpRepositoryError, SignUpRepositoryPort},
+            repositories::auth::sign_up_repository_port::{
+                SignUpRepositoryError, SignUpRepositoryPort,
+            },
         },
     },
     domain::{
@@ -122,7 +124,7 @@ mod tests {
             ports::{
                 hasher::hasher_port::{HasherError, HasherPort},
                 id_generator::id_generator_port::IdGeneratorPort,
-                repositories::sign_up_repository_port::{
+                repositories::auth::sign_up_repository_port::{
                     SignUpRepositoryError, SignUpRepositoryPort,
                 },
             },
