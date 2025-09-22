@@ -30,11 +30,11 @@ pub mod application {
 
         pub mod repositories {
             pub mod auth {
-                pub mod sign_in_repository_port;
                 pub mod sign_up_repository_port;
             }
 
             pub mod user {
+                pub mod get_user_by_email_repository_port;
                 pub mod get_user_by_id_repository_port;
             }
         }
@@ -52,7 +52,7 @@ pub mod application {
         pub mod auth {
             pub mod sign_up_use_case;
         }
-        
+
         pub mod user {
             pub mod get_user_by_email_use_case;
             pub mod get_user_by_id_use_case;
@@ -137,10 +137,15 @@ pub mod presentation {
 
     pub mod controllers {
         pub mod auth {
-            pub mod sign_in_controller;
-            pub mod sign_in_validator;
-            pub mod sign_up_controller;
-            pub mod sign_up_validator;
+            pub mod sign_up {
+                pub mod sign_up_controller;
+                pub mod sign_up_validator;
+            }
+
+            pub mod sign_in {
+                pub mod sign_in_controller;
+                pub mod sign_in_validator;
+            }
         }
 
         pub mod user {

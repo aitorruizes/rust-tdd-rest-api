@@ -5,7 +5,7 @@ use crate::application::{
     ports::{
         auth::auth_port::{AuthError, AuthPort},
         hasher::hasher_port::{HasherError, HasherPort},
-        repositories::auth::sign_in_repository_port::{
+        repositories::user::get_user_by_email_repository_port::{
             GetUserByEmailRepositoryError, GetUserByEmailRepositoryPort,
         },
     },
@@ -46,10 +46,11 @@ where
 {
     hasher_adapter: HasherAdapter,
     auth_adapter: AuthAdapter,
-    sign_in_repository: Repository,
+    get_user_by_email_repository: Repository,
 }
 
-impl<HasherAdapter, AuthAdapter, Repository> GetUserByEmailUseCase<HasherAdapter, AuthAdapter, Repository>
+impl<HasherAdapter, AuthAdapter, Repository>
+    GetUserByEmailUseCase<HasherAdapter, AuthAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
@@ -58,12 +59,12 @@ where
     pub const fn new(
         hasher_adapter: HasherAdapter,
         auth_adapter: AuthAdapter,
-        sign_in_repository: Repository,
+        get_user_by_email_repository: Repository,
     ) -> Self {
         Self {
             hasher_adapter,
             auth_adapter,
-            sign_in_repository,
+            get_user_by_email_repository,
         }
     }
 }
@@ -78,10 +79,11 @@ where
     fn perform(
         &self,
         sign_in_dto: SignInDto,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<String>, GetUserByEmailUseCaseError>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = Result<Option<String>, GetUserByEmailUseCaseError>> + Send + '_>>
+    {
         Box::pin(async move {
             match self
-                .sign_in_repository
+                .get_user_by_email_repository
                 .execute(sign_in_dto.email)
                 .await
                 .map_err(GetUserByEmailUseCaseError::DatabaseError)?

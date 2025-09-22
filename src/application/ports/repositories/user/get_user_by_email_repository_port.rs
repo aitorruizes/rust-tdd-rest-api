@@ -23,5 +23,11 @@ pub trait GetUserByEmailRepositoryPort: Send + Sync {
     fn execute(
         &self,
         email: String,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>> + Send + '_>>;
+    ) -> Pin<
+        Box<
+            dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>>
+                + Send
+                + '_,
+        >,
+    >;
 }

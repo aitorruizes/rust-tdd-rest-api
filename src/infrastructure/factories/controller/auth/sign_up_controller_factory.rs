@@ -13,7 +13,8 @@ use crate::{
     },
     presentation::{
         controllers::auth::{
-            sign_up_controller::SignUpController, sign_up_validator::SignUpValidator,
+            sign_up::sign_up_controller::SignUpController,
+            sign_up::sign_up_validator::SignUpValidator,
         },
         helpers::http::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,

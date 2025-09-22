@@ -14,7 +14,8 @@ use crate::{
     },
     presentation::{
         controllers::auth::{
-            sign_in_controller::SignInController, sign_in_validator::SignInValidator,
+            sign_in::sign_in_controller::SignInController,
+            sign_in::sign_in_validator::SignInValidator,
         },
         helpers::http::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
@@ -43,9 +44,13 @@ impl SignInControllerFactory {
         let hasher_adapter = BcryptAdapter;
         let auth_adapter = JsonWebTokenAdapter;
         let pattern_matching_adapter = RegexAdapter;
-        let sign_in_repository = GetUserByEmailRepository::new(self.database_pool.clone());
-        let sign_in_use_case =
-            GetUserByEmailUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
+
+        let get_user_by_email_repository =
+            GetUserByEmailRepository::new(self.database_pool.clone());
+
+        let get_user_by_email_use_case =
+            GetUserByEmailUseCase::new(hasher_adapter, auth_adapter, get_user_by_email_repository);
+
         let sign_in_validator = SignInValidator;
         let http_response_helper = HttpResponseHelper::new();
         let http_body_helper = HttpBodyHelper::new(sign_in_validator, http_response_helper.clone());
@@ -53,7 +58,7 @@ impl SignInControllerFactory {
         SignInController::new(
             http_body_helper,
             pattern_matching_adapter,
-            sign_in_use_case,
+            get_user_by_email_use_case,
             http_response_helper,
         )
     }

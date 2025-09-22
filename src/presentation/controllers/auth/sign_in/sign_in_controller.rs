@@ -27,7 +27,7 @@ use crate::{
 pub struct SignInController<Validator, PatternMatchingAdapter, UseCase> {
     http_body_helper: HttpBodyHelper<Validator>,
     pattern_matching_adapter: PatternMatchingAdapter,
-    sign_in_use_case: UseCase,
+    get_user_by_email_use_case: UseCase,
     http_response_helper: HttpResponseHelper,
 }
 
@@ -41,13 +41,13 @@ where
     pub const fn new(
         http_body_helper: HttpBodyHelper<Validator>,
         pattern_matching_adapter: PatternMatchingAdapter,
-        sign_in_use_case: UseCase,
+        get_user_by_email_use_case: UseCase,
         http_response_helper: HttpResponseHelper,
     ) -> Self {
         Self {
             http_body_helper,
             pattern_matching_adapter,
-            sign_in_use_case,
+            get_user_by_email_use_case,
             http_response_helper,
         }
     }
@@ -125,7 +125,7 @@ where
                 extracted_body["password"].as_str().unwrap().to_string(),
             );
 
-            match self.sign_in_use_case.perform(sign_in_dto).await {
+            match self.get_user_by_email_use_case.perform(sign_in_dto).await {
                 Ok(result) => result.map_or_else(
                     || {
                         let body = json!({
