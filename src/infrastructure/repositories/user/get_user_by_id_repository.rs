@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     application::ports::repositories::user::get_user_by_id_repository_port::{
-        GetUserByIdFUture, GetUserByIdRepositoryError, GetUserByIdRepositoryPort,
+        GetUserByIdFuture, GetUserByIdRepositoryError, GetUserByIdRepositoryPort,
     },
     domain::entities::user::user_entity::UserEntity,
 };
@@ -23,7 +23,7 @@ impl GetUserByIdRepository {
 }
 
 impl GetUserByIdRepositoryPort for GetUserByIdRepository {
-    fn execute(&self, id: String) -> GetUserByIdFUture<'_> {
+    fn execute(&self, id: String) -> GetUserByIdFuture<'_> {
         Box::pin(async move {
             let user_entity = sqlx::query_as!(
                 UserEntity,

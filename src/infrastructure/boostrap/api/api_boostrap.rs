@@ -104,6 +104,7 @@ impl ApiBootstrapPort for ApiBootstrap {
                 sign_in_controller,
                 get_user_by_id_controller,
             );
+
             let axum_router = core_router.register_routes();
 
             axum::serve(

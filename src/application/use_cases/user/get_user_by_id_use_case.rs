@@ -71,3 +71,123 @@ where
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use mockall::mock;
+    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
+    use uuid::Uuid;
+
+    use crate::{
+        application::{
+            ports::repositories::user::get_user_by_id_repository_port::{
+                GetUserByIdFuture, GetUserByIdRepositoryError, GetUserByIdRepositoryPort,
+            },
+            use_cases::user::get_user_by_id_use_case::{
+                GetUserByIdUseCase, GetUserByIdUseCasePort,
+            },
+        },
+        domain::entities::user::user_entity::UserEntityBuilder,
+    };
+
+    mock! {
+        pub GetUserByIdRepository {}
+
+        impl GetUserByIdRepositoryPort for GetUserByIdRepository {
+            fn execute(&self, id: String) -> GetUserByIdFuture<'_>;
+        }
+
+        impl Clone for GetUserByIdRepository {
+            fn clone(&self) -> Self {
+                MockSignUpRepository::new()
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn should_successfully_call_get_user_by_id_repository() {
+        let mut get_user_by_id_repository_mock = MockGetUserByIdRepository::default();
+
+        get_user_by_id_repository_mock
+            .expect_execute()
+            .returning(|_| {
+                Box::pin(async move {
+                    let user_entity = UserEntityBuilder::default()
+                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .first_name("John")
+                        .last_name("Doe")
+                        .email("johndoe@gmail.com")
+                        .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
+                        .is_admin(false)
+                        .created_at(
+                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
+                        )
+                        .updated_at(
+                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
+                        )
+                        .build();
+
+                    Ok(Some(user_entity))
+                })
+            });
+
+        let get_user_by_id_use_case = GetUserByIdUseCase::new(get_user_by_id_repository_mock);
+        let id = "dba86129-90be-4409-a5a3-396db9335a57".to_string();
+        let result = get_user_by_id_use_case.perform(id).await;
+
+        assert!(result.is_ok());
+
+        let content = result.unwrap();
+
+        assert!(content.is_some());
+
+        let user = content.unwrap();
+
+        assert_eq!(user.id.to_string(), "dba86129-90be-4409-a5a3-396db9335a57");
+        assert_eq!(user.first_name, "John");
+        assert_eq!(user.last_name, "Doe");
+        assert_eq!(user.email, "johndoe@gmail.com");
+
+        assert_eq!(
+            user.password,
+            "$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa."
+        );
+
+        assert!(!user.is_admin);
+
+        assert_eq!(
+            user.created_at,
+            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap()
+        );
+
+        assert_eq!(
+            user.updated_at,
+            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn should_return_error_if_get_user_by_id_repository_fails() {
+        let mut get_user_by_id_repository_mock = MockGetUserByIdRepository::default();
+
+        get_user_by_id_repository_mock
+            .expect_execute()
+            .returning(|_| {
+                Box::pin(async move {
+                    Err(GetUserByIdRepositoryError::FindByIdError {
+                        message: "find by id error".to_string(),
+                    })
+                })
+            });
+
+        let get_user_by_id_use_case = GetUserByIdUseCase::new(get_user_by_id_repository_mock);
+        let id = "dba86129-90be-4409-a5a3-396db9335a57".to_string();
+        let result = get_user_by_id_use_case.perform(id).await;
+
+        assert!(result.is_err());
+
+        let error = result.unwrap_err();
+
+        assert_eq!(error.to_string(), "fetch by id error: find by id error");
+    }
+}

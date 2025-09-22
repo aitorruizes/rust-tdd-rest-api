@@ -232,7 +232,7 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     Err(SignUpRepositoryError::InsertError {
-                        message: "Database error".to_string(),
+                        message: "database error".to_string(),
                     })
                 })
             });
@@ -269,13 +269,9 @@ mod tests {
         assert!(result.is_err());
 
         let error = result.unwrap_err();
+        let formatted_error = format!("{}", error);
 
-        assert_eq!(
-            error,
-            SignUpUseCaseError::RepositoryError(SignUpRepositoryError::InsertError {
-                message: "Database error".to_string()
-            })
-        );
+        assert_eq!(formatted_error, "insert error: database error");
     }
 
     #[tokio::test]
@@ -285,7 +281,7 @@ mod tests {
 
         hasher_adapter_mock.expect_hash().times(1).returning(|_| {
             Err(HasherError::HashingError {
-                message: "Hashing error".to_string(),
+                message: "hashing error".to_string(),
             })
         });
 
@@ -311,10 +307,8 @@ mod tests {
         let error = result.unwrap_err();
 
         assert_eq!(
-            error,
-            SignUpUseCaseError::HasherError(HasherError::HashingError {
-                message: "Hashing error".to_string()
-            })
+            error.to_string(),
+            "an error occurred while hashing password: hashing error"
         );
     }
 

@@ -17,10 +17,10 @@ impl std::fmt::Display for GetUserByIdRepositoryError {
     }
 }
 
-pub type GetUserByIdFUture<'a> = Pin<
+pub type GetUserByIdFuture<'a> = Pin<
     Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByIdRepositoryError>> + Send + 'a>,
 >;
 
 pub trait GetUserByIdRepositoryPort {
-    fn execute(&self, id: String) -> GetUserByIdFUture<'_>;
+    fn execute(&self, id: String) -> GetUserByIdFuture<'_>;
 }
