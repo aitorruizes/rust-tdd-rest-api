@@ -11,7 +11,7 @@ impl std::fmt::Display for SignUpRepositoryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InsertError { message } => {
-                write!(f, "insert Error: {message}")
+                write!(f, "insert error: {message}")
             }
         }
     }

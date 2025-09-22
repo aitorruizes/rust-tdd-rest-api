@@ -1,9 +1,8 @@
 use axum::{Json, Router, http::StatusCode, response::IntoResponse};
 use serde_json::json;
-use tower::ServiceBuilder;
 use tower_governor::{GovernorError, GovernorLayer, governor::GovernorConfigBuilder};
 use tower_helmet::HelmetLayer;
-use tower_http::trace::TraceLayer;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::presentation::{
     ports::{controller::controller_port::ControllerPort, router::router_port::RouterPort},
@@ -41,6 +40,7 @@ where
     fn register_routes(self) -> Router {
         let auth_router = AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
         let private_router = PrivateRouter::new();
+        let cors_middleware = CorsLayer::permissive();
         let trace_layer_middleware = TraceLayer::new_for_http();
 
         let governor_config = GovernorConfigBuilder::default()
@@ -83,12 +83,10 @@ where
         Router::new()
             .nest("/api/v1", auth_router.register_routes())
             .nest("/api/v1", private_router.register_routes())
-            .layer(
-                ServiceBuilder::new()
-                    .layer(trace_layer_middleware)
-                    .layer(governor_middleware)
-                    .layer(helmet_middleware),
-            )
+            .layer(cors_middleware)
+            .layer(trace_layer_middleware)
+            .layer(helmet_middleware)
+            .layer(governor_middleware)
             .fallback(|| async {
                 (
                     StatusCode::NOT_FOUND,

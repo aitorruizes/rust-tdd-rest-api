@@ -113,7 +113,7 @@ where
                             "error_message": error.to_string()
                         })
                     }
-                    SignUpUseCaseError::DatabaseError(error) => {
+                    SignUpUseCaseError::RepositoryError(error) => {
                         json!({
                             "error_code": "internal_server_error",
                             "error_message": error.to_string()
@@ -131,7 +131,7 @@ where
                     SignUpUseCaseError::UserError(_) => {
                         self.http_response_helper.bad_request(Some(body))
                     }
-                    SignUpUseCaseError::HasherError(_) | SignUpUseCaseError::DatabaseError(_) => {
+                    SignUpUseCaseError::HasherError(_) | SignUpUseCaseError::RepositoryError(_) => {
                         self.http_response_helper.internal_server_error(Some(body))
                     }
                 };

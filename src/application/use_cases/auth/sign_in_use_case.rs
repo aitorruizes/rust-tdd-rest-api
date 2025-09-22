@@ -26,15 +26,7 @@ impl std::fmt::Display for SignInUseCaseError {
     }
 }
 
-impl std::error::Error for SignInUseCaseError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::HasherError(error) => Some(error),
-            Self::AuthError(error) => Some(error),
-            Self::DatabaseError(error) => Some(error),
-        }
-    }
-}
+impl std::error::Error for SignInUseCaseError {}
 
 pub trait SignInUseCasePort: Send + Sync {
     fn perform(

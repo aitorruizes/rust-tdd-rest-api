@@ -18,7 +18,7 @@ use crate::{
 pub enum SignUpUseCaseError {
     HasherError(HasherError),
     UserError(UserError),
-    DatabaseError(SignUpRepositoryError),
+    RepositoryError(SignUpRepositoryError),
 }
 
 impl std::fmt::Display for SignUpUseCaseError {
@@ -26,20 +26,12 @@ impl std::fmt::Display for SignUpUseCaseError {
         match self {
             Self::HasherError(error) => write!(f, "{error}"),
             Self::UserError(error) => write!(f, "{error}"),
-            Self::DatabaseError(error) => write!(f, "{error}"),
+            Self::RepositoryError(error) => write!(f, "{error}"),
         }
     }
 }
 
-impl std::error::Error for SignUpUseCaseError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::HasherError(error) => Some(error),
-            Self::UserError(error) => Some(error),
-            Self::DatabaseError(error) => Some(error),
-        }
-    }
-}
+impl std::error::Error for SignUpUseCaseError {}
 
 pub trait SignUpUseCasePort: Send + Sync {
     fn perform(
@@ -110,7 +102,7 @@ where
             self.sign_up_repository
                 .execute(user_entity)
                 .await
-                .map_err(SignUpUseCaseError::DatabaseError)?;
+                .map_err(SignUpUseCaseError::RepositoryError)?;
 
             Ok(())
         })
@@ -125,8 +117,8 @@ mod tests {
     use uuid::Uuid;
 
     use crate::{
-        application::dtos::auth::sign_up_dto::SignUpDto,
         application::{
+            dtos::auth::sign_up_dto::SignUpDto,
             ports::{
                 hasher::hasher_port::{HasherError, HasherPort},
                 id_generator::id_generator_port::IdGeneratorPort,
@@ -138,7 +130,7 @@ mod tests {
                 SignUpUseCase, SignUpUseCaseError, SignUpUseCasePort,
             },
         },
-        domain::entities::user::user_entity::UserEntity,
+        domain::{entities::user::user_entity::UserEntity, errors::user::user_errors::UserError},
     };
 
     mock! {
@@ -278,7 +270,7 @@ mod tests {
 
         assert_eq!(
             error,
-            SignUpUseCaseError::DatabaseError(SignUpRepositoryError::InsertError {
+            SignUpUseCaseError::RepositoryError(SignUpRepositoryError::InsertError {
                 message: "Database error".to_string()
             })
         );
@@ -322,5 +314,39 @@ mod tests {
                 message: "Hashing error".to_string()
             })
         );
+    }
+
+    #[test]
+    fn test_signup_use_case_error_display() {
+        let first_error = SignUpUseCaseError::HasherError(HasherError::HashingError {
+            message: "hasher error".to_string(),
+        });
+
+        let second_error = SignUpUseCaseError::HasherError(HasherError::VerificationError {
+            message: "verification error".to_string(),
+        });
+
+        let third_error = SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch);
+
+        let fourth_error =
+            SignUpUseCaseError::RepositoryError(SignUpRepositoryError::InsertError {
+                message: "repository error".to_string(),
+            });
+
+        assert_eq!(
+            first_error.to_string(),
+            "an error occurred while hashing password: hasher error"
+        );
+        assert_eq!(
+            second_error.to_string(),
+            "an error occurred while verifying password: verification error"
+        );
+
+        assert_eq!(
+            third_error.to_string(),
+            "the provided passwords do not match"
+        );
+
+        assert_eq!(fourth_error.to_string(), "insert error: repository error");
     }
 }

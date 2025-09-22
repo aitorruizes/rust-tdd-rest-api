@@ -30,7 +30,7 @@ impl AuthPort for JsonWebTokenAdapter {
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_secs()
-                + 5,
+                + 120,
         )
         .map_err(|_| AuthError::UnexpectedError)?;
 
