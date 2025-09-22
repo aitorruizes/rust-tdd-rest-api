@@ -10,7 +10,7 @@ use crate::{
             jsonwebtoken::jsonwebtoken_adapter::JsonWebTokenAdapter,
             regex::regex_adapter::RegexAdapter,
         },
-        repositories::auth::sign_in_repository::SignInRepository,
+        repositories::user::get_user_by_email_repository::GetUserByEmailRepository,
     },
     presentation::{
         controllers::auth::{
@@ -38,12 +38,12 @@ impl SignInControllerFactory {
     ) -> SignInController<
         SignInValidator,
         RegexAdapter,
-        SignInUseCase<BcryptAdapter, JsonWebTokenAdapter, SignInRepository>,
+        SignInUseCase<BcryptAdapter, JsonWebTokenAdapter, GetUserByEmailRepository>,
     > {
         let hasher_adapter = BcryptAdapter;
         let auth_adapter = JsonWebTokenAdapter;
         let pattern_matching_adapter = RegexAdapter;
-        let sign_in_repository = SignInRepository::new(self.database_pool.clone());
+        let sign_in_repository = GetUserByEmailRepository::new(self.database_pool.clone());
         let sign_in_use_case = SignInUseCase::new(hasher_adapter, auth_adapter, sign_in_repository);
         let sign_in_validator = SignInValidator;
         let http_response_helper = HttpResponseHelper::new();

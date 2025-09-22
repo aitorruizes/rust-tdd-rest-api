@@ -6,7 +6,7 @@ use crate::application::{
         auth::auth_port::{AuthError, AuthPort},
         hasher::hasher_port::{HasherError, HasherPort},
         repositories::auth::sign_in_repository_port::{
-            SignInRepositoryError, SignInRepositoryPort,
+            GetUserByEmailRepositoryError, GetUserByEmailRepositoryPort,
         },
     },
 };
@@ -15,7 +15,7 @@ use crate::application::{
 pub enum SignInUseCaseError {
     HasherError(HasherError),
     AuthError(AuthError),
-    DatabaseError(SignInRepositoryError),
+    DatabaseError(GetUserByEmailRepositoryError),
 }
 
 impl std::fmt::Display for SignInUseCaseError {
@@ -42,7 +42,7 @@ pub struct SignInUseCase<HasherAdapter, AuthAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
     hasher_adapter: HasherAdapter,
     auth_adapter: AuthAdapter,
@@ -53,7 +53,7 @@ impl<HasherAdapter, AuthAdapter, Repository> SignInUseCase<HasherAdapter, AuthAd
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
     pub const fn new(
         hasher_adapter: HasherAdapter,
@@ -73,7 +73,7 @@ impl<HasherAdapter, AuthAdapter, Repository> SignInUseCasePort
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: SignInRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
     fn perform(
         &self,

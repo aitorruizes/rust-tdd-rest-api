@@ -70,11 +70,11 @@ pub mod application {
 pub mod infrastructure {
     pub mod repositories {
         pub mod auth {
-            pub mod sign_in_repository;
             pub mod sign_up_repository;
         }
 
         pub mod user {
+            pub mod get_user_by_email_repository;
             pub mod get_user_by_id_repository;
         }
     }

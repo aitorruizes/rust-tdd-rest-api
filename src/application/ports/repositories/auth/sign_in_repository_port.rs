@@ -3,11 +3,11 @@ use std::pin::Pin;
 use crate::domain::entities::user::user_entity::UserEntity;
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum SignInRepositoryError {
+pub enum GetUserByEmailRepositoryError {
     FindByEmailError { message: String },
 }
 
-impl std::fmt::Display for SignInRepositoryError {
+impl std::fmt::Display for GetUserByEmailRepositoryError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::FindByEmailError { message } => {
@@ -17,11 +17,11 @@ impl std::fmt::Display for SignInRepositoryError {
     }
 }
 
-impl std::error::Error for SignInRepositoryError {}
+impl std::error::Error for GetUserByEmailRepositoryError {}
 
-pub trait SignInRepositoryPort: Send + Sync {
+pub trait GetUserByEmailRepositoryPort: Send + Sync {
     fn execute(
         &self,
         email: String,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<UserEntity>, SignInRepositoryError>> + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>> + Send + '_>>;
 }
