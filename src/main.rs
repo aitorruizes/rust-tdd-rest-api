@@ -53,6 +53,10 @@ pub mod application {
             pub mod sign_in_use_case;
             pub mod sign_up_use_case;
         }
+
+        pub mod user {
+            pub mod get_user_by_id_use_case;
+        }
     }
 
     pub mod dtos {
