@@ -5,7 +5,9 @@ use serde_json::json;
 use crate::{
     application::{
         dtos::auth::sign_up_dto::SignUpDto,
-        ports::pattern_matching::pattern_matching_port::{PatternMatchingPort, RegexError},
+        ports::pattern_matching::pattern_matching_port::{
+            PatternMatchingError, PatternMatchingPort,
+        },
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
     presentation::{
@@ -75,7 +77,7 @@ where
                 extracted_body["email"].as_str().unwrap(),
                 |v| self.pattern_matching_adapter.is_valid_email(v),
                 "invalid_email",
-                &RegexError::InvalidEmail,
+                &PatternMatchingError::InvalidEmail,
             ) {
                 return http_response_dto;
             }
@@ -84,7 +86,7 @@ where
                 extracted_body["email"].as_str().unwrap(),
                 |v| self.pattern_matching_adapter.is_valid_email_domain(v),
                 "invalid_email_domain",
-                &RegexError::InvalidEmailDomain,
+                &PatternMatchingError::InvalidEmailDomain,
             ) {
                 return http_response_dto;
             }
@@ -93,7 +95,7 @@ where
                 extracted_body["password"].as_str().unwrap(),
                 |v| self.pattern_matching_adapter.is_valid_password(v),
                 "invalid_password",
-                &RegexError::InvalidPassword,
+                &PatternMatchingError::InvalidPassword,
             ) {
                 return http_response_dto;
             }

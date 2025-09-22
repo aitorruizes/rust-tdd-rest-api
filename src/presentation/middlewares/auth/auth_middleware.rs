@@ -20,7 +20,7 @@ where
         Self { auth_port }
     }
 
-    /// Handles an incoming HTTP request, validating the `Authorization` header.
+    /// Process an incoming HTTP request, validating the `Authorization` header.
     ///
     /// This middleware checks for the presence of the `Authorization` header and verifies
     /// its token using the `auth_port`. If the header is missing, empty, or the token
@@ -38,7 +38,7 @@ where
     /// # Panics
     /// - Panics if `serde_json::to_string` fails (should not happen with valid JSON literals).
     /// - Panics if building the response with `Response::builder().body(...)` fails.
-    pub async fn handle(&self, req: Request<Body>, next: Next) -> Response<Body> {
+    pub async fn process(&self, req: Request<Body>, next: Next) -> Response<Body> {
         let authorization_token =
             if let Some(authorization_header) = req.headers().get("Authorization") {
                 match authorization_header.to_str() {

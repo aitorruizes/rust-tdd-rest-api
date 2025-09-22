@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
@@ -8,12 +10,14 @@ use crate::{
     domain::entities::user::user_entity::UserEntity,
 };
 
+#[derive(Clone)]
 pub struct GetUserByIdRepository {
-    database_pool: Pool<Postgres>,
+    database_pool: Arc<Pool<Postgres>>,
 }
 
 impl GetUserByIdRepository {
-    pub const fn new(database_pool: Pool<Postgres>) -> Self {
+    #[must_use]
+    pub const fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
         Self { database_pool }
     }
 }
@@ -26,7 +30,7 @@ impl GetUserByIdRepositoryPort for GetUserByIdRepository {
                 "SELECT * FROM users WHERE id = $1",
                 Uuid::parse_str(&id).unwrap()
             )
-            .fetch_optional(&self.database_pool)
+            .fetch_optional(&*self.database_pool)
             .await
             .map_err(|err| GetUserByIdRepositoryError::FindByIdError {
                 message: err.to_string(),

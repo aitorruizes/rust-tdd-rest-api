@@ -4,9 +4,12 @@ use tokio::net::TcpListener;
 
 use crate::{
     infrastructure::{
-        factories::controller::auth::{
-            sign_in_controller_factory::SignInControllerFactory,
-            sign_up_controller_factory::SignUpControllerFactory,
+        factories::controller::{
+            auth::{
+                sign_in_controller_factory::SignInControllerFactory,
+                sign_up_controller_factory::SignUpControllerFactory,
+            },
+            user::get_user_by_id_controller_factory::GetUserByIdControllerFactory,
         },
         gateways::database::database_gateway::DatabaseGateway,
     },
@@ -87,9 +90,20 @@ impl ApiBootstrapPort for ApiBootstrap {
 
             let sign_up_controller_factory = SignUpControllerFactory::new(database_pool.clone());
             let sign_up_controller = sign_up_controller_factory.build();
-            let sign_in_controller_factory = SignInControllerFactory::new(database_pool);
+
+            let sign_in_controller_factory = SignInControllerFactory::new(database_pool.clone());
             let sign_in_controller = sign_in_controller_factory.build();
-            let core_router = CoreRouter::new(sign_up_controller, sign_in_controller);
+
+            let get_user_by_id_controller_factory =
+                GetUserByIdControllerFactory::new(database_pool);
+
+            let get_user_by_id_controller = get_user_by_id_controller_factory.build();
+
+            let core_router = CoreRouter::new(
+                sign_up_controller,
+                sign_in_controller,
+                get_user_by_id_controller,
+            );
             let axum_router = core_router.register_routes();
 
             axum::serve(

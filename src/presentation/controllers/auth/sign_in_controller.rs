@@ -5,7 +5,9 @@ use serde_json::json;
 use crate::{
     application::{
         dtos::auth::sign_in_dto::SignInDto,
-        ports::pattern_matching::pattern_matching_port::{PatternMatchingPort, RegexError},
+        ports::pattern_matching::pattern_matching_port::{
+            PatternMatchingError, PatternMatchingPort,
+        },
         use_cases::auth::sign_in_use_case::{SignInUseCaseError, SignInUseCasePort},
     },
     presentation::{
@@ -75,7 +77,7 @@ where
                     if !result {
                         let body = json!({
                             "error_code": "invalid_email",
-                            "error_message": RegexError::InvalidEmail.to_string(),
+                            "error_message": PatternMatchingError::InvalidEmail.to_string(),
                         });
 
                         return self.http_response_helper.bad_request(Some(body));
@@ -100,7 +102,7 @@ where
                     if !result {
                         let body = Some(json!({
                             "error_code": "invalid_email_domain",
-                            "error_message": RegexError::InvalidEmailDomain.to_string(),
+                            "error_message": PatternMatchingError::InvalidEmailDomain.to_string(),
                         }));
 
                         return self.http_response_helper.bad_request(body);

@@ -6,40 +6,47 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
 use crate::presentation::{
     ports::{controller::controller_port::ControllerPort, router::router_port::RouterPort},
-    routers::{auth::auth_router::AuthRouter, private::private_router::PrivateRouter},
+    routers::{auth::auth_router::AuthRouter, user::user_router::UserRouter},
 };
 
-pub struct CoreRouter<SignUpController, SignInController> {
+#[allow(clippy::struct_field_names)]
+pub struct CoreRouter<SignUpController, SignInController, GetUserByIdController> {
     sign_up_controller: SignUpController,
     sign_in_controller: SignInController,
+    get_user_by_id_controller: GetUserByIdController,
 }
 
-impl<SignUpController, SignInController> CoreRouter<SignUpController, SignInController>
+impl<SignUpController, SignInController, GetUserByIdController>
+    CoreRouter<SignUpController, SignInController, GetUserByIdController>
 where
     SignUpController: ControllerPort + Clone + Send + Sync,
     SignInController: ControllerPort + Clone + Send + Sync,
+    GetUserByIdController: ControllerPort + Clone + Send + Sync,
 {
     #[must_use]
     pub const fn new(
         sign_up_controller: SignUpController,
         sign_in_controller: SignInController,
+        get_user_by_id_controller: GetUserByIdController,
     ) -> Self {
         Self {
             sign_up_controller,
             sign_in_controller,
+            get_user_by_id_controller,
         }
     }
 }
 
-impl<SignUpController, SignInController> RouterPort
-    for CoreRouter<SignUpController, SignInController>
+impl<SignUpController, SignInController, GetUserByIdController> RouterPort
+    for CoreRouter<SignUpController, SignInController, GetUserByIdController>
 where
     SignUpController: ControllerPort + Clone + Send + Sync + 'static,
     SignInController: ControllerPort + Clone + Send + Sync + 'static,
+    GetUserByIdController: ControllerPort + Clone + Send + Sync + 'static,
 {
     fn register_routes(self) -> Router {
         let auth_router = AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
-        let private_router = PrivateRouter::new();
+        let user_router = UserRouter::new(self.get_user_by_id_controller);
         let cors_middleware = CorsLayer::permissive();
         let trace_layer_middleware = TraceLayer::new_for_http();
 
@@ -80,9 +87,12 @@ where
 
         let helmet_middleware = HelmetLayer::with_defaults();
 
+        let merged_routers = auth_router
+            .register_routes()
+            .merge(user_router.register_routes());
+
         Router::new()
-            .nest("/api/v1", auth_router.register_routes())
-            .nest("/api/v1", private_router.register_routes())
+            .nest("/api/v1", merged_routers)
             .layer(cors_middleware)
             .layer(trace_layer_middleware)
             .layer(helmet_middleware)

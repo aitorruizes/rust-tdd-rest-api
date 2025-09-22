@@ -119,6 +119,10 @@ pub mod infrastructure {
                 pub mod sign_in_controller_factory;
                 pub mod sign_up_controller_factory;
             }
+
+            pub mod user {
+                pub mod get_user_by_id_controller_factory;
+            }
         }
     }
 }
@@ -137,6 +141,10 @@ pub mod presentation {
             pub mod sign_in_validator;
             pub mod sign_up_controller;
             pub mod sign_up_validator;
+        }
+
+        pub mod user {
+            pub mod get_user_by_id_controller;
         }
     }
 
@@ -163,8 +171,8 @@ pub mod presentation {
             pub mod core_router;
         }
 
-        pub mod private {
-            pub mod private_router;
+        pub mod user {
+            pub mod user_router;
         }
     }
 

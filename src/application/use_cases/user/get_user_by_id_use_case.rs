@@ -32,14 +32,14 @@ pub trait GetUserByIdUseCasePort: Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct SignUpUseCase<Repository>
+pub struct GetUserByIdUseCase<Repository>
 where
     Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {
     get_user_by_id_repository: Repository,
 }
 
-impl<Repository> SignUpUseCase<Repository>
+impl<Repository> GetUserByIdUseCase<Repository>
 where
     Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {
@@ -50,7 +50,7 @@ where
     }
 }
 
-impl<Repository> GetUserByIdUseCasePort for SignUpUseCase<Repository>
+impl<Repository> GetUserByIdUseCasePort for GetUserByIdUseCase<Repository>
 where
     Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {

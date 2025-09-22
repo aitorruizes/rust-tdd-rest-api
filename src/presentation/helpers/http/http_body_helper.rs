@@ -1,7 +1,7 @@
 use serde_json::{Value, json};
 
 use crate::{
-    application::ports::pattern_matching::pattern_matching_port::RegexError,
+    application::ports::pattern_matching::pattern_matching_port::PatternMatchingError,
     presentation::{
         dtos::http::http_response_dto::HttpResponseDto,
         helpers::http::http_response_helper::HttpResponseHelper,
@@ -55,10 +55,10 @@ where
         value: &str,
         validator: F,
         error_code: &str,
-        error_message: &RegexError,
+        error_message: &PatternMatchingError,
     ) -> Option<HttpResponseDto>
     where
-        F: Fn(&str) -> Result<bool, RegexError>,
+        F: Fn(&str) -> Result<bool, PatternMatchingError>,
     {
         match validator(value) {
             Ok(true) => None,

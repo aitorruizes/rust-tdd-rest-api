@@ -108,6 +108,20 @@ impl HttpResponseHelper {
             },
         )
     }
+
+    #[must_use]
+    pub fn not_found(&self, body: Option<Value>) -> HttpResponseDto {
+        body.map_or(
+            HttpResponseDto {
+                status_code: 404,
+                body: None,
+            },
+            |value| HttpResponseDto {
+                status_code: 404,
+                body: Some(json!(value)),
+            },
+        )
+    }
 }
 
 impl Default for HttpResponseHelper {
