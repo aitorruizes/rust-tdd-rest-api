@@ -9,7 +9,7 @@ use crate::{
             bcrypt::bcrypt_adapter::BcryptAdapter, regex::regex_adapter::RegexAdapter,
             uuid::uuid_adapter::UuidAdapter,
         },
-        repositories::auth::sign_up_repository::SignUpRepository,
+        repositories::user::create_user_repository::CreateUserRepository,
     },
     presentation::{
         controllers::auth::{
@@ -37,14 +37,14 @@ impl SignUpControllerFactory {
         &self,
     ) -> SignUpController<
         SignUpValidator,
-        SignUpUseCase<BcryptAdapter, UuidAdapter, SignUpRepository>,
+        SignUpUseCase<BcryptAdapter, UuidAdapter, CreateUserRepository>,
         RegexAdapter,
     > {
         let sign_up_validator = SignUpValidator;
         let pattern_matching_adapter = RegexAdapter;
         let hasher_adapter = BcryptAdapter;
         let id_generator_adapter = UuidAdapter;
-        let sign_up_repository = SignUpRepository::new(self.database_pool.clone());
+        let sign_up_repository = CreateUserRepository::new(self.database_pool.clone());
         let http_response_helper = HttpResponseHelper::new();
         let http_body_helper = HttpBodyHelper::new(sign_up_validator, http_response_helper.clone());
 

@@ -1,31 +1,28 @@
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::ports::repositories::auth::sign_up_repository_port::{
-        SignUpRepositoryError, SignUpRepositoryPort,
+    application::ports::repositories::user::create_user_repository_port::{
+        CreateUserRepositoryError, CreateUserRepositoryFuture, CreateUserRepositoryPort,
     },
     domain::entities::user::user_entity::UserEntity,
 };
 
 #[derive(Clone)]
-pub struct SignUpRepository {
+pub struct CreateUserRepository {
     database_pool: Arc<Pool<Postgres>>,
 }
 
-impl SignUpRepository {
+impl CreateUserRepository {
     #[must_use]
     pub const fn new(database_pool: Arc<Pool<Postgres>>) -> Self {
         Self { database_pool }
     }
 }
 
-impl SignUpRepositoryPort for SignUpRepository {
-    fn execute(
-        &self,
-        user_entity: UserEntity,
-    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpRepositoryError>> + Send + '_>> {
+impl CreateUserRepositoryPort for CreateUserRepository {
+    fn execute(&self, user_entity: UserEntity) -> CreateUserRepositoryFuture<'_> {
         Box::pin(async move {
             sqlx::query!(
                 r#"
@@ -40,7 +37,7 @@ impl SignUpRepositoryPort for SignUpRepository {
             )
             .execute(&*self.database_pool)
             .await
-            .map_err(|err| SignUpRepositoryError::InsertError {
+            .map_err(|err| CreateUserRepositoryError::InsertError {
                 message: err.to_string(),
             })?;
 

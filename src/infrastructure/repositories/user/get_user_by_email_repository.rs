@@ -1,10 +1,10 @@
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 
 use sqlx::{Pool, Postgres};
 
 use crate::{
     application::ports::repositories::user::get_user_by_email_repository_port::{
-        GetUserByEmailRepositoryError, GetUserByEmailRepositoryPort,
+        GetUserByEmailRepositoryError, GetUserByEmailRepositoryFuture, GetUserByEmailRepositoryPort,
     },
     domain::entities::user::user_entity::UserEntity,
 };
@@ -22,16 +22,7 @@ impl GetUserByEmailRepository {
 }
 
 impl GetUserByEmailRepositoryPort for GetUserByEmailRepository {
-    fn execute(
-        &self,
-        email: String,
-    ) -> Pin<
-        Box<
-            dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>>
-                + Send
-                + '_,
-        >,
-    > {
+    fn execute(&self, email: String) -> GetUserByEmailRepositoryFuture<'_> {
         Box::pin(async move {
             let user_entity =
                 sqlx::query_as!(UserEntity, "SELECT * FROM users WHERE email = $1", email)

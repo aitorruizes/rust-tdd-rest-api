@@ -19,15 +19,10 @@ impl std::fmt::Display for GetUserByEmailRepositoryError {
 
 impl std::error::Error for GetUserByEmailRepositoryError {}
 
+pub type GetUserByEmailRepositoryFuture<'a> = Pin<
+    Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>> + Send + 'a>,
+>;
+
 pub trait GetUserByEmailRepositoryPort: Send + Sync {
-    fn execute(
-        &self,
-        email: String,
-    ) -> Pin<
-        Box<
-            dyn Future<Output = Result<Option<UserEntity>, GetUserByEmailRepositoryError>>
-                + Send
-                + '_,
-        >,
-    >;
+    fn execute(&self, email: String) -> GetUserByEmailRepositoryFuture<'_>;
 }

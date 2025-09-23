@@ -1,5 +1,3 @@
-use std::pin::Pin;
-
 use serde_json::json;
 
 use crate::{
@@ -8,8 +6,8 @@ use crate::{
         ports::pattern_matching::pattern_matching_port::{
             PatternMatchingError, PatternMatchingPort,
         },
-        use_cases::user::get_user_by_email_use_case::{
-            GetUserByEmailUseCaseError, GetUserByEmailUseCasePort,
+        use_cases::auth::sign_in_use_case::{
+            SignInUseCaseError, SignInUseCasePort,
         },
     },
     presentation::{
@@ -18,7 +16,8 @@ use crate::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
         },
         ports::{
-            controller::controller_port::ControllerPort, validator::validator_port::ValidatorPort,
+            controller::controller_port::{ControllerFuture, ControllerPort},
+            validator::validator_port::ValidatorPort,
         },
     },
 };
@@ -27,7 +26,7 @@ use crate::{
 pub struct SignInController<Validator, PatternMatchingAdapter, UseCase> {
     http_body_helper: HttpBodyHelper<Validator>,
     pattern_matching_adapter: PatternMatchingAdapter,
-    get_user_by_email_use_case: UseCase,
+    sign_in_use_case: UseCase,
     http_response_helper: HttpResponseHelper,
 }
 
@@ -36,18 +35,18 @@ impl<Validator, PatternMatchingAdapter, UseCase>
 where
     Validator: ValidatorPort + Clone + Send + Sync,
     PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: GetUserByEmailUseCasePort + Clone + Send + Sync,
+    UseCase: SignInUseCasePort + Clone + Send + Sync,
 {
     pub const fn new(
         http_body_helper: HttpBodyHelper<Validator>,
         pattern_matching_adapter: PatternMatchingAdapter,
-        get_user_by_email_use_case: UseCase,
+        sign_in_use_case: UseCase,
         http_response_helper: HttpResponseHelper,
     ) -> Self {
         Self {
             http_body_helper,
             pattern_matching_adapter,
-            get_user_by_email_use_case,
+            sign_in_use_case,
             http_response_helper,
         }
     }
@@ -58,12 +57,9 @@ impl<Validator, PatternMatchingAdapter, UseCase> ControllerPort
 where
     Validator: ValidatorPort + Clone + Send + Sync,
     PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: GetUserByEmailUseCasePort + Clone + Send + Sync,
+    UseCase: SignInUseCasePort + Clone + Send + Sync,
 {
-    fn handle(
-        &self,
-        http_request_dto: HttpRequestDto,
-    ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>> {
+    fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {
             self.http_body_helper
                 .validate_request_body(http_request_dto.body.clone());
@@ -125,7 +121,7 @@ where
                 extracted_body["password"].as_str().unwrap().to_string(),
             );
 
-            match self.get_user_by_email_use_case.perform(sign_in_dto).await {
+            match self.sign_in_use_case.perform(sign_in_dto).await {
                 Ok(result) => result.map_or_else(
                     || {
                         let body = json!({
@@ -143,13 +139,13 @@ where
                 ),
                 Err(err) => {
                     let (error_code, error_message) = match err {
-                        GetUserByEmailUseCaseError::HasherError(error) => {
+                        SignInUseCaseError::HasherError(error) => {
                             ("use_case_error", error.to_string())
                         }
-                        GetUserByEmailUseCaseError::AuthError(error) => {
+                        SignInUseCaseError::AuthError(error) => {
                             ("use_case_error", error.to_string())
                         }
-                        GetUserByEmailUseCaseError::DatabaseError(error) => {
+                        SignInUseCaseError::DatabaseError(error) => {
                             ("repository_error", error.to_string())
                         }
                     };

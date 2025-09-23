@@ -6,8 +6,8 @@ use crate::{
         ports::{
             hasher::hasher_port::{HasherError, HasherPort},
             id_generator::id_generator_port::IdGeneratorPort,
-            repositories::auth::sign_up_repository_port::{
-                SignUpRepositoryError, SignUpRepositoryPort,
+            repositories::user::create_user_repository_port::{
+                CreateUserRepositoryError, CreateUserRepositoryPort,
             },
         },
     },
@@ -20,7 +20,7 @@ use crate::{
 pub enum SignUpUseCaseError {
     HasherError(HasherError),
     UserError(UserError),
-    RepositoryError(SignUpRepositoryError),
+    RepositoryError(CreateUserRepositoryError),
 }
 
 impl std::fmt::Display for SignUpUseCaseError {
@@ -35,11 +35,11 @@ impl std::fmt::Display for SignUpUseCaseError {
 
 impl std::error::Error for SignUpUseCaseError {}
 
+pub type SignUpUseCaseFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + 'a>>;
+
 pub trait SignUpUseCasePort: Send + Sync {
-    fn perform(
-        &self,
-        sign_up_dto: SignUpDto,
-    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>>;
+    fn perform(&self, sign_up_dto: SignUpDto) -> SignUpUseCaseFuture<'_>;
 }
 
 #[derive(Clone)]
@@ -47,7 +47,7 @@ pub struct SignUpUseCase<HasherAdapter, IdGeneratorAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     IdGeneratorAdapter: IdGeneratorPort + Send + Sync + Clone + 'static,
-    Repository: SignUpRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: CreateUserRepositoryPort + Send + Sync + Clone + 'static,
 {
     hasher_adapter: HasherAdapter,
     id_generator_adapter: IdGeneratorAdapter,
@@ -59,7 +59,7 @@ impl<HasherAdapter, IdGeneratorAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     IdGeneratorAdapter: IdGeneratorPort + Send + Sync + Clone + 'static,
-    Repository: SignUpRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: CreateUserRepositoryPort + Send + Sync + Clone + 'static,
 {
     pub const fn new(
         hasher_adapter: HasherAdapter,
@@ -79,12 +79,9 @@ impl<HasherAdapter, IdGeneratorAdapter, Repository> SignUpUseCasePort
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     IdGeneratorAdapter: IdGeneratorPort + Send + Sync + Clone + 'static,
-    Repository: SignUpRepositoryPort + Send + Sync + Clone + 'static,
+    Repository: CreateUserRepositoryPort + Send + Sync + Clone + 'static,
 {
-    fn perform(
-        &self,
-        sign_up_dto: SignUpDto,
-    ) -> Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + '_>> {
+    fn perform(&self, sign_up_dto: SignUpDto) -> SignUpUseCaseFuture<'_> {
         Box::pin(async move {
             let hashed_password = self
                 .hasher_adapter
@@ -113,8 +110,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::pin::Pin;
-
     use mockall::mock;
     use uuid::Uuid;
 
@@ -124,8 +119,8 @@ mod tests {
             ports::{
                 hasher::hasher_port::{HasherError, HasherPort},
                 id_generator::id_generator_port::IdGeneratorPort,
-                repositories::auth::sign_up_repository_port::{
-                    SignUpRepositoryError, SignUpRepositoryPort,
+                repositories::user::create_user_repository_port::{
+                    CreateUserRepositoryError, CreateUserRepositoryFuture, CreateUserRepositoryPort,
                 },
             },
             use_cases::auth::sign_up_use_case::{
@@ -136,18 +131,18 @@ mod tests {
     };
 
     mock! {
-        pub SignUpRepository {}
+        pub CreateUserRepository {}
 
-        impl SignUpRepositoryPort for SignUpRepository {
+        impl CreateUserRepositoryPort for CreateUserRepository {
             fn execute(
                 &self,
                 user_entity: UserEntity,
-            ) -> Pin<Box<dyn Future<Output = Result<(), SignUpRepositoryError>> + Send + 'static>>;
+            ) -> CreateUserRepositoryFuture<'_>;
         }
 
-        impl Clone for SignUpRepository {
+        impl Clone for CreateUserRepository {
             fn clone(&self) -> Self {
-                MockSignUpRepository::new()
+                MockCreateUserRepository::new()
             }
         }
     }
@@ -183,7 +178,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_succecssfully_execute_sign_up_repository() {
-        let mut sign_up_repository_mock = MockSignUpRepository::default();
+        let mut sign_up_repository_mock = MockCreateUserRepository::default();
 
         sign_up_repository_mock
             .expect_execute()
@@ -224,14 +219,14 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_sign_up_repository_fails() {
-        let mut sign_up_repository_mock = MockSignUpRepository::default();
+        let mut sign_up_repository_mock = MockCreateUserRepository::default();
 
         sign_up_repository_mock
             .expect_execute()
             .times(1)
             .returning(|_| {
                 Box::pin(async move {
-                    Err(SignUpRepositoryError::InsertError {
+                    Err(CreateUserRepositoryError::InsertError {
                         message: "database error".to_string(),
                     })
                 })
@@ -276,7 +271,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_password_hash_fails() {
-        let sign_up_repository_mock = MockSignUpRepository::default();
+        let sign_up_repository_mock = MockCreateUserRepository::default();
         let mut hasher_adapter_mock = MockHasherAdapter::default();
 
         hasher_adapter_mock.expect_hash().times(1).returning(|_| {
@@ -325,7 +320,7 @@ mod tests {
         let third_error = SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch);
 
         let fourth_error =
-            SignUpUseCaseError::RepositoryError(SignUpRepositoryError::InsertError {
+            SignUpUseCaseError::RepositoryError(CreateUserRepositoryError::InsertError {
                 message: "repository error".to_string(),
             });
 

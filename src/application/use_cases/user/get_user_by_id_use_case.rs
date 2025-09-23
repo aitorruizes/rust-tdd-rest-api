@@ -22,13 +22,11 @@ impl std::fmt::Display for GetUserByIdUseCaseError {
 
 impl std::error::Error for GetUserByIdUseCaseError {}
 
+pub type GetUserByIdUseCaseFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByIdUseCaseError>> + Send + 'a>>;
+
 pub trait GetUserByIdUseCasePort: Send + Sync {
-    fn perform(
-        &self,
-        id: String,
-    ) -> Pin<
-        Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByIdUseCaseError>> + Send + '_>,
-    >;
+    fn perform(&self, id: String) -> GetUserByIdUseCaseFuture<'_>;
 }
 
 #[derive(Clone)]
@@ -54,12 +52,7 @@ impl<Repository> GetUserByIdUseCasePort for GetUserByIdUseCase<Repository>
 where
     Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {
-    fn perform(
-        &self,
-        id: String,
-    ) -> Pin<
-        Box<dyn Future<Output = Result<Option<UserEntity>, GetUserByIdUseCaseError>> + Send + '_>,
-    > {
+    fn perform(&self, id: String) -> GetUserByIdUseCaseFuture<'_> {
         Box::pin(async move {
             let user_entity = self
                 .get_user_by_id_repository
@@ -99,7 +92,7 @@ mod tests {
 
         impl Clone for GetUserByIdRepository {
             fn clone(&self) -> Self {
-                MockSignUpRepository::new()
+                MockCreateUserRepository::new()
             }
         }
     }

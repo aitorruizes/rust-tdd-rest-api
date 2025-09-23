@@ -1,5 +1,3 @@
-use std::pin::Pin;
-
 use serde_json::json;
 
 use crate::{
@@ -11,12 +9,13 @@ use crate::{
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
     presentation::{
-        dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
+        dtos::http::http_request_dto::HttpRequestDto,
         helpers::http::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
         },
         ports::{
-            controller::controller_port::ControllerPort, validator::validator_port::ValidatorPort,
+            controller::controller_port::{ControllerFuture, ControllerPort},
+            validator::validator_port::ValidatorPort,
         },
     },
 };
@@ -63,10 +62,7 @@ where
     UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
     PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
 {
-    fn handle(
-        &self,
-        http_request_dto: HttpRequestDto,
-    ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>> {
+    fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {
             self.http_body_helper
                 .validate_request_body(http_request_dto.body.clone());

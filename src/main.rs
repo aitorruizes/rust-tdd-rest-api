@@ -29,11 +29,8 @@ pub mod application {
         }
 
         pub mod repositories {
-            pub mod auth {
-                pub mod sign_up_repository_port;
-            }
-
             pub mod user {
+                pub mod create_user_repository_port;
                 pub mod get_user_by_email_repository_port;
                 pub mod get_user_by_id_repository_port;
             }
@@ -50,11 +47,11 @@ pub mod application {
 
     pub mod use_cases {
         pub mod auth {
+            pub mod sign_in_use_case;
             pub mod sign_up_use_case;
         }
 
         pub mod user {
-            pub mod get_user_by_email_use_case;
             pub mod get_user_by_id_use_case;
         }
     }
@@ -69,11 +66,8 @@ pub mod application {
 
 pub mod infrastructure {
     pub mod repositories {
-        pub mod auth {
-            pub mod sign_up_repository;
-        }
-
         pub mod user {
+            pub mod create_user_repository;
             pub mod get_user_by_email_repository;
             pub mod get_user_by_id_repository;
         }

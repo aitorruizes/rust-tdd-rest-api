@@ -12,13 +12,13 @@ use crate::application::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum GetUserByEmailUseCaseError {
+pub enum SignInUseCaseError {
     HasherError(HasherError),
     AuthError(AuthError),
     DatabaseError(GetUserByEmailRepositoryError),
 }
 
-impl std::fmt::Display for GetUserByEmailUseCaseError {
+impl std::fmt::Display for SignInUseCaseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::HasherError(error) => write!(f, "{error}"),
@@ -28,17 +28,17 @@ impl std::fmt::Display for GetUserByEmailUseCaseError {
     }
 }
 
-impl std::error::Error for GetUserByEmailUseCaseError {}
+impl std::error::Error for SignInUseCaseError {}
 
-pub trait GetUserByEmailUseCasePort: Send + Sync {
-    fn perform(
-        &self,
-        sign_in_dto: SignInDto,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<String>, GetUserByEmailUseCaseError>> + Send + '_>>;
+pub type SignInUseCaseFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<Option<String>, SignInUseCaseError>> + Send + 'a>>;
+
+pub trait SignInUseCasePort: Send + Sync {
+    fn perform(&self, sign_in_dto: SignInDto) -> SignInUseCaseFuture<'_>;
 }
 
 #[derive(Clone)]
-pub struct GetUserByEmailUseCase<HasherAdapter, AuthAdapter, Repository>
+pub struct SignInUseCase<HasherAdapter, AuthAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
@@ -50,7 +50,7 @@ where
 }
 
 impl<HasherAdapter, AuthAdapter, Repository>
-    GetUserByEmailUseCase<HasherAdapter, AuthAdapter, Repository>
+    SignInUseCase<HasherAdapter, AuthAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
@@ -69,30 +69,26 @@ where
     }
 }
 
-impl<HasherAdapter, AuthAdapter, Repository> GetUserByEmailUseCasePort
-    for GetUserByEmailUseCase<HasherAdapter, AuthAdapter, Repository>
+impl<HasherAdapter, AuthAdapter, Repository> SignInUseCasePort
+    for SignInUseCase<HasherAdapter, AuthAdapter, Repository>
 where
     HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
     AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
     Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
-    fn perform(
-        &self,
-        sign_in_dto: SignInDto,
-    ) -> Pin<Box<dyn Future<Output = Result<Option<String>, GetUserByEmailUseCaseError>> + Send + '_>>
-    {
+    fn perform(&self, sign_in_dto: SignInDto) -> SignInUseCaseFuture<'_> {
         Box::pin(async move {
             match self
                 .get_user_by_email_repository
                 .execute(sign_in_dto.email)
                 .await
-                .map_err(GetUserByEmailUseCaseError::DatabaseError)?
+                .map_err(SignInUseCaseError::DatabaseError)?
             {
                 Some(user) => {
                     let has_password_matched = self
                         .hasher_adapter
                         .verify(&sign_in_dto.password, &user.password)
-                        .map_err(GetUserByEmailUseCaseError::HasherError)?;
+                        .map_err(SignInUseCaseError::HasherError)?;
 
                     if !has_password_matched {
                         return Ok(None);
@@ -101,7 +97,7 @@ where
                     let generated_auth_token = self
                         .auth_adapter
                         .generate_auth_token(user.id)
-                        .map_err(GetUserByEmailUseCaseError::AuthError)?;
+                        .map_err(SignInUseCaseError::AuthError)?;
 
                     Ok(Some(generated_auth_token))
                 }

@@ -1,5 +1,3 @@
-use std::pin::Pin;
-
 use serde_json::json;
 
 use crate::{
@@ -10,9 +8,9 @@ use crate::{
         use_cases::user::get_user_by_id_use_case::GetUserByIdUseCasePort,
     },
     presentation::{
-        dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
+        dtos::http::http_request_dto::HttpRequestDto,
         helpers::http::http_response_helper::HttpResponseHelper,
-        ports::controller::controller_port::ControllerPort,
+        ports::controller::controller_port::{ControllerFuture, ControllerPort},
     },
 };
 
@@ -47,10 +45,7 @@ where
     PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
     UseCase: GetUserByIdUseCasePort + Clone + Send + Sync,
 {
-    fn handle(
-        &self,
-        http_request_dto: HttpRequestDto,
-    ) -> Pin<Box<dyn Future<Output = HttpResponseDto> + Send + '_>> {
+    fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {
             let params = http_request_dto.params.unwrap();
             let id = params.get("id").unwrap();
