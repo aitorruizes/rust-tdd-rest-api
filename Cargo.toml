@@ -30,3 +30,6 @@ sqlx = { version = "0.8", features = [
 
 [dev-dependencies]
 mockall = "0.13.1"
+
+[package.metadata.llvm-cov]
+ignore = ["src/infrastructure/adapters/*"]

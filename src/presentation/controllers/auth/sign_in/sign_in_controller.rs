@@ -6,9 +6,7 @@ use crate::{
         ports::pattern_matching::pattern_matching_port::{
             PatternMatchingError, PatternMatchingPort,
         },
-        use_cases::auth::sign_in_use_case::{
-            SignInUseCaseError, SignInUseCasePort,
-        },
+        use_cases::auth::sign_in_use_case::{SignInUseCaseError, SignInUseCasePort},
     },
     presentation::{
         dtos::http::{http_request_dto::HttpRequestDto, http_response_dto::HttpResponseDto},
