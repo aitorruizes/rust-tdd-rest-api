@@ -15,20 +15,20 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct GetUserByIdController<PatternMatchingAdapter, UseCase> {
-    pattern_matching_adapter: PatternMatchingAdapter,
-    get_user_by_id_use_case: UseCase,
+pub struct GetUserByIdController<P, U> {
+    pattern_matching_adapter: P,
+    get_user_by_id_use_case: U,
     http_response_helper: HttpResponseHelper,
 }
 
-impl<PatternMatchingAdapter, UseCase> GetUserByIdController<PatternMatchingAdapter, UseCase>
+impl<P, U> GetUserByIdController<P, U>
 where
-    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: GetUserByIdUseCasePort + Clone + Send + Sync,
+    P: PatternMatchingPort + Clone + Send + Sync,
+    U: GetUserByIdUseCasePort + Clone + Send + Sync,
 {
     pub const fn new(
-        pattern_matching_adapter: PatternMatchingAdapter,
-        get_user_by_id_use_case: UseCase,
+        pattern_matching_adapter: P,
+        get_user_by_id_use_case: U,
         http_response_helper: HttpResponseHelper,
     ) -> Self {
         Self {
@@ -39,11 +39,10 @@ where
     }
 }
 
-impl<PatternMatchingAdapter, UseCase> ControllerPort
-    for GetUserByIdController<PatternMatchingAdapter, UseCase>
+impl<P, U> ControllerPort for GetUserByIdController<P, U>
 where
-    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: GetUserByIdUseCasePort + Clone + Send + Sync,
+    P: PatternMatchingPort + Clone + Send + Sync,
+    U: GetUserByIdUseCasePort + Clone + Send + Sync,
 {
     fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {

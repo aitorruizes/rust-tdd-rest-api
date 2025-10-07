@@ -10,17 +10,17 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct HttpBodyHelper<Validator> {
-    validator: Validator,
+pub struct HttpBodyHelper<V> {
+    validator: V,
     http_response_helper: HttpResponseHelper,
 }
 
-impl<Validator> HttpBodyHelper<Validator>
+impl<V> HttpBodyHelper<V>
 where
-    Validator: ValidatorPort + Clone + Send + Sync,
+    V: ValidatorPort + Clone + Send + Sync,
 {
     #[must_use]
-    pub const fn new(validator: Validator, http_response_helper: HttpResponseHelper) -> Self {
+    pub const fn new(validator: V, http_response_helper: HttpResponseHelper) -> Self {
         Self {
             validator,
             http_response_helper,

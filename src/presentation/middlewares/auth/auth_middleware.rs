@@ -8,15 +8,15 @@ use serde_json::json;
 use crate::application::ports::auth::auth_port::AuthPort;
 
 #[derive(Clone)]
-pub struct AuthMiddleware<AuthAdapter> {
-    auth_port: AuthAdapter,
+pub struct AuthMiddleware<A> {
+    auth_port: A,
 }
 
-impl<AuthAdapter> AuthMiddleware<AuthAdapter>
+impl<A> AuthMiddleware<A>
 where
-    AuthAdapter: AuthPort + Clone + Send + Sync,
+    A: AuthPort + Clone + Send + Sync,
 {
-    pub const fn new(auth_port: AuthAdapter) -> Self {
+    pub const fn new(auth_port: A) -> Self {
         Self { auth_port }
     }
 
@@ -27,7 +27,7 @@ where
     /// verification fails, it returns a `401 Unauthorized` response with a JSON error.
     ///
     /// # Parameters
-    /// - `req`: the incoming HTTP request.
+    /// - `request`: the incoming HTTP request.
     /// - `next`: the next middleware or handler in the chain.
     ///
     /// # Returns
@@ -38,9 +38,9 @@ where
     /// # Panics
     /// - Panics if `serde_json::to_string` fails (should not happen with valid JSON literals).
     /// - Panics if building the response with `Response::builder().body(...)` fails.
-    pub async fn process(&self, req: Request<Body>, next: Next) -> Response<Body> {
+    pub async fn process(&self, request: Request<Body>, next: Next) -> Response<Body> {
         let authorization_token =
-            if let Some(authorization_header) = req.headers().get("Authorization") {
+            if let Some(authorization_header) = request.headers().get("Authorization") {
                 match authorization_header.to_str() {
                     Ok(value) if !value.is_empty() => value,
                     _ => {
@@ -74,7 +74,7 @@ where
         let splitted_token = authorization_token.trim_start_matches("Bearer ").trim();
 
         match self.auth_port.verify_auth_token(splitted_token) {
-            Ok(()) => next.run(req).await,
+            Ok(()) => next.run(request).await,
             Err(err) => {
                 let body = serde_json::to_string(&json!({
                     "error_code": "authorization_middleware",

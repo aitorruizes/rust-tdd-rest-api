@@ -11,24 +11,23 @@ use crate::presentation::{
 };
 
 #[allow(clippy::struct_field_names)]
-pub struct CoreRouter<SignUpController, SignInController, GetUserByIdController> {
-    sign_up_controller: SignUpController,
-    sign_in_controller: SignInController,
-    get_user_by_id_controller: GetUserByIdController,
+pub struct CoreRouter<SU, SI, G> {
+    sign_up_controller: SU,
+    sign_in_controller: SI,
+    get_user_by_id_controller: G,
 }
 
-impl<SignUpController, SignInController, GetUserByIdController>
-    CoreRouter<SignUpController, SignInController, GetUserByIdController>
+impl<SU, SI, G> CoreRouter<SU, SI, G>
 where
-    SignUpController: ControllerPort + Clone + Send + Sync,
-    SignInController: ControllerPort + Clone + Send + Sync,
-    GetUserByIdController: ControllerPort + Clone + Send + Sync,
+    SU: ControllerPort + Clone + Send + Sync,
+    SI: ControllerPort + Clone + Send + Sync,
+    G: ControllerPort + Clone + Send + Sync,
 {
     #[must_use]
     pub const fn new(
-        sign_up_controller: SignUpController,
-        sign_in_controller: SignInController,
-        get_user_by_id_controller: GetUserByIdController,
+        sign_up_controller: SU,
+        sign_in_controller: SI,
+        get_user_by_id_controller: G,
     ) -> Self {
         Self {
             sign_up_controller,
@@ -38,12 +37,11 @@ where
     }
 }
 
-impl<SignUpController, SignInController, GetUserByIdController> RouterPort
-    for CoreRouter<SignUpController, SignInController, GetUserByIdController>
+impl<SU, SI, G> RouterPort for CoreRouter<SU, SI, G>
 where
-    SignUpController: ControllerPort + Clone + Send + Sync + 'static,
-    SignInController: ControllerPort + Clone + Send + Sync + 'static,
-    GetUserByIdController: ControllerPort + Clone + Send + Sync + 'static,
+    SU: ControllerPort + Clone + Send + Sync + 'static,
+    SI: ControllerPort + Clone + Send + Sync + 'static,
+    G: ControllerPort + Clone + Send + Sync + 'static,
 {
     fn register_routes(self) -> Router {
         let auth_router =

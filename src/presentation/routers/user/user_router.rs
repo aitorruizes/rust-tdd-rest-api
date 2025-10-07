@@ -20,25 +20,25 @@ use crate::{
     },
 };
 
-pub struct UserRouter<Controller> {
-    get_user_by_id_controller: Controller,
+pub struct UserRouter<C> {
+    get_user_by_id_controller: C,
 }
 
-impl<Controller> UserRouter<Controller>
+impl<C> UserRouter<C>
 where
-    Controller: ControllerPort + Clone + Send + Sync,
+    C: ControllerPort + Clone + Send + Sync,
 {
     #[must_use]
-    pub const fn new(get_user_by_id_controller: Controller) -> Self {
+    pub const fn new(get_user_by_id_controller: C) -> Self {
         Self {
             get_user_by_id_controller,
         }
     }
 }
 
-impl<Controller> RouterPort for UserRouter<Controller>
+impl<C> RouterPort for UserRouter<C>
 where
-    Controller: ControllerPort + Clone + Send + Sync + 'static,
+    C: ControllerPort + Clone + Send + Sync + 'static,
 {
     fn register_routes(self) -> Router {
         let auth_middleware = AuthMiddleware::new(JsonWebTokenAdapter);
@@ -47,16 +47,16 @@ where
         Router::new().route(
             "/users/{id}",
             get({
-                move |path: Path<HashMap<String, String>>, req: Request<Body>| async move {
-                    axum_handler_adapter.adapt_handler(path, req).await
+                move |path: Path<HashMap<String, String>>, request: Request<Body>| async move {
+                    axum_handler_adapter.adapt_handler(path, request).await
                 }
             })
             .options(|| async { StatusCode::OK })
             .layer(middleware::from_fn({
-                move |req, next| {
+                move |request, next| {
                     let auth_middleware = auth_middleware.clone();
 
-                    async move { auth_middleware.process(req, next).await }
+                    async move { auth_middleware.process(request, next).await }
                 }
             })),
         )

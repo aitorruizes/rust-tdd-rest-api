@@ -50,16 +50,16 @@ where
             .route(
                 "/auth/sign-up",
                 post({
-                    move |path: Path<HashMap<String, String>>, req: Request<Body>| async move {
-                        sign_up_controller_adapter.adapt_handler(path, req).await
+                    move |path: Path<HashMap<String, String>>, request: Request<Body>| async move {
+                        sign_up_controller_adapter.adapt_handler(path, request).await
                     }
                 }),
             )
             .route(
                 "/auth/sign-in",
                 post({
-                    move |path: Path<HashMap<String, String>>, req: Request<Body>| async move {
-                        sign_in_controller_adapter.adapt_handler(path, req).await
+                    move |path: Path<HashMap<String, String>>, request: Request<Body>| async move {
+                        sign_in_controller_adapter.adapt_handler(path, request).await
                     }
                 }),
             )

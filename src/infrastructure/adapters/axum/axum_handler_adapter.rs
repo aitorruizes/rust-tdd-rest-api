@@ -12,16 +12,16 @@ use crate::presentation::{
 };
 
 #[derive(Clone)]
-pub struct AxumHandlerAdapter<Controller> {
-    handler: Controller,
+pub struct AxumHandlerAdapter<H> {
+    handler: H,
 }
 
-impl<Controller> AxumHandlerAdapter<Controller>
+impl<H> AxumHandlerAdapter<H>
 where
-    Controller: ControllerPort + Clone + Send + Sync,
+    H: ControllerPort + Clone + Send + Sync,
 {
     #[must_use]
-    pub const fn new(handler: Controller) -> Self {
+    pub const fn new(handler: H) -> Self {
         Self { handler }
     }
 
@@ -33,7 +33,7 @@ where
     /// # Parameters
     ///
     /// - `Path(request_params)`: a map of path parameters extracted from the request URL.
-    /// - `req`: the raw HTTP request of type `Request<Body>`.
+    /// - `request`: the raw HTTP request of type `Request<Body>`.
     ///
     /// # Returns
     ///
@@ -48,9 +48,9 @@ where
     pub async fn adapt_handler(
         &self,
         Path(request_params): Path<HashMap<String, String>>,
-        req: Request<Body>,
+        request: Request<Body>,
     ) -> Response<Body> {
-        let method = match *req.method() {
+        let method = match *request.method() {
             Method::GET => Method::GET,
             Method::POST => Method::POST,
             Method::PUT => Method::PUT,
@@ -64,9 +64,9 @@ where
             }
         };
 
-        let uri = req.uri().to_string();
+        let uri = request.uri().to_string();
 
-        let Ok(body_bytes) = to_bytes(req.into_body(), usize::MAX).await else {
+        let Ok(body_bytes) = to_bytes(request.into_body(), usize::MAX).await else {
             return Response::builder()
                 .status(StatusCode::INTERNAL_SERVER_ERROR)
                 .body(Body::from("Error reading request body."))
