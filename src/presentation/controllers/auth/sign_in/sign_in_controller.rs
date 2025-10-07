@@ -21,24 +21,23 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct SignInController<Validator, PatternMatchingAdapter, UseCase> {
-    http_body_helper: HttpBodyHelper<Validator>,
-    pattern_matching_adapter: PatternMatchingAdapter,
-    sign_in_use_case: UseCase,
+pub struct SignInController<V, P, U> {
+    http_body_helper: HttpBodyHelper<V>,
+    pattern_matching_adapter: P,
+    sign_in_use_case: U,
     http_response_helper: HttpResponseHelper,
 }
 
-impl<Validator, PatternMatchingAdapter, UseCase>
-    SignInController<Validator, PatternMatchingAdapter, UseCase>
+impl<V, P, U> SignInController<V, P, U>
 where
-    Validator: ValidatorPort + Clone + Send + Sync,
-    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: SignInUseCasePort + Clone + Send + Sync,
+    V: ValidatorPort + Clone + Send + Sync,
+    P: PatternMatchingPort + Clone + Send + Sync,
+    U: SignInUseCasePort + Clone + Send + Sync,
 {
     pub const fn new(
-        http_body_helper: HttpBodyHelper<Validator>,
-        pattern_matching_adapter: PatternMatchingAdapter,
-        sign_in_use_case: UseCase,
+        http_body_helper: HttpBodyHelper<V>,
+        pattern_matching_adapter: P,
+        sign_in_use_case: U,
         http_response_helper: HttpResponseHelper,
     ) -> Self {
         Self {
@@ -50,12 +49,11 @@ where
     }
 }
 
-impl<Validator, PatternMatchingAdapter, UseCase> ControllerPort
-    for SignInController<Validator, PatternMatchingAdapter, UseCase>
+impl<V, P, U> ControllerPort for SignInController<V, P, U>
 where
-    Validator: ValidatorPort + Clone + Send + Sync,
-    PatternMatchingAdapter: PatternMatchingPort + Clone + Send + Sync,
-    UseCase: SignInUseCasePort + Clone + Send + Sync,
+    V: ValidatorPort + Clone + Send + Sync,
+    P: PatternMatchingPort + Clone + Send + Sync,
+    U: SignInUseCasePort + Clone + Send + Sync,
 {
     fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {

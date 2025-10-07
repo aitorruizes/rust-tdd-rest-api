@@ -30,27 +30,24 @@ pub trait GetUserByIdUseCasePort: Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct GetUserByIdUseCase<Repository>
-where
-    Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
-{
-    get_user_by_id_repository: Repository,
+pub struct GetUserByIdUseCase<G> {
+    get_user_by_id_repository: G,
 }
 
-impl<Repository> GetUserByIdUseCase<Repository>
+impl<G> GetUserByIdUseCase<G>
 where
-    Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
+    G: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {
-    pub const fn new(get_user_by_id_repository: Repository) -> Self {
+    pub const fn new(get_user_by_id_repository: G) -> Self {
         Self {
             get_user_by_id_repository,
         }
     }
 }
 
-impl<Repository> GetUserByIdUseCasePort for GetUserByIdUseCase<Repository>
+impl<G> GetUserByIdUseCasePort for GetUserByIdUseCase<G>
 where
-    Repository: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
+    G: GetUserByIdRepositoryPort + Send + Sync + Clone + 'static,
 {
     fn perform(&self, id: String) -> GetUserByIdUseCaseFuture<'_> {
         Box::pin(async move {

@@ -38,28 +38,19 @@ pub trait SignInUseCasePort: Send + Sync {
 }
 
 #[derive(Clone)]
-pub struct SignInUseCase<HasherAdapter, AuthAdapter, Repository>
-where
-    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
-    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
-{
-    hasher_adapter: HasherAdapter,
-    auth_adapter: AuthAdapter,
-    get_user_by_email_repository: Repository,
+pub struct SignInUseCase<H, A, G> {
+    hasher_adapter: H,
+    auth_adapter: A,
+    get_user_by_email_repository: G,
 }
 
-impl<HasherAdapter, AuthAdapter, Repository> SignInUseCase<HasherAdapter, AuthAdapter, Repository>
+impl<H, A, G> SignInUseCase<H, A, G>
 where
-    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
-    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
+    H: HasherPort + Send + Sync + Clone + 'static,
+    A: AuthPort + Send + Sync + Clone + 'static,
+    G: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
-    pub const fn new(
-        hasher_adapter: HasherAdapter,
-        auth_adapter: AuthAdapter,
-        get_user_by_email_repository: Repository,
-    ) -> Self {
+    pub const fn new(hasher_adapter: H, auth_adapter: A, get_user_by_email_repository: G) -> Self {
         Self {
             hasher_adapter,
             auth_adapter,
@@ -68,12 +59,11 @@ where
     }
 }
 
-impl<HasherAdapter, AuthAdapter, Repository> SignInUseCasePort
-    for SignInUseCase<HasherAdapter, AuthAdapter, Repository>
+impl<H, A, G> SignInUseCasePort for SignInUseCase<H, A, G>
 where
-    HasherAdapter: HasherPort + Send + Sync + Clone + 'static,
-    AuthAdapter: AuthPort + Send + Sync + Clone + 'static,
-    Repository: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
+    H: HasherPort + Send + Sync + Clone + 'static,
+    A: AuthPort + Send + Sync + Clone + 'static,
+    G: GetUserByEmailRepositoryPort + Send + Sync + Clone + 'static,
 {
     fn perform(&self, sign_in_dto: SignInDto) -> SignInUseCaseFuture<'_> {
         Box::pin(async move {

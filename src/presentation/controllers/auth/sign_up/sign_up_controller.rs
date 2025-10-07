@@ -25,29 +25,23 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct SignUpController<Validator, UseCase, PatternMatchingAdapter>
-where
-    Validator: ValidatorPort + Clone + Send + Sync,
-    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
-    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
-{
-    http_body_helper: HttpBodyHelper<Validator>,
-    pattern_matching_adapter: PatternMatchingAdapter,
-    sign_up_use_case: UseCase,
+pub struct SignUpController<V, P, U> {
+    http_body_helper: HttpBodyHelper<V>,
+    pattern_matching_adapter: P,
+    sign_up_use_case: U,
     http_response_helper: HttpResponseHelper,
 }
 
-impl<Validator, UseCase, PatternMatchingAdapter>
-    SignUpController<Validator, UseCase, PatternMatchingAdapter>
+impl<V, P, U> SignUpController<V, P, U>
 where
-    Validator: ValidatorPort + Send + Sync + Clone,
-    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
-    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
+    V: ValidatorPort + Send + Sync + Clone,
+    P: PatternMatchingPort + Send + Sync + Clone + 'static,
+    U: SignUpUseCasePort + Send + Sync + Clone + 'static,
 {
     pub const fn new(
-        http_body_helper: HttpBodyHelper<Validator>,
-        pattern_matching_adapter: PatternMatchingAdapter,
-        sign_up_use_case: UseCase,
+        http_body_helper: HttpBodyHelper<V>,
+        pattern_matching_adapter: P,
+        sign_up_use_case: U,
         http_response_helper: HttpResponseHelper,
     ) -> Self {
         Self {
@@ -59,12 +53,11 @@ where
     }
 }
 
-impl<Validator, UseCase, PatternMatchingAdapter> ControllerPort
-    for SignUpController<Validator, UseCase, PatternMatchingAdapter>
+impl<V, P, U> ControllerPort for SignUpController<V, P, U>
 where
-    Validator: ValidatorPort + Clone + Send + Sync,
-    UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
-    PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
+    V: ValidatorPort + Clone + Send + Sync,
+    P: PatternMatchingPort + Send + Sync + Clone + 'static,
+    U: SignUpUseCasePort + Send + Sync + Clone + 'static,
 {
     fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {

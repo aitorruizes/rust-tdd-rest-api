@@ -39,16 +39,18 @@ impl SignUpControllerFactory {
         &self,
     ) -> SignUpController<
         SignUpValidator,
-        SignUpUseCase<BcryptAdapter, UuidAdapter, CreateUserRepository, GetUserByEmailRepository>,
         RegexAdapter,
+        SignUpUseCase<BcryptAdapter, UuidAdapter, CreateUserRepository, GetUserByEmailRepository>,
     > {
         let sign_up_validator = SignUpValidator;
         let pattern_matching_adapter = RegexAdapter;
         let hasher_adapter = BcryptAdapter;
         let id_generator_adapter = UuidAdapter;
         let create_user_repository = CreateUserRepository::new(self.database_pool.clone());
+
         let get_user_by_email_repository =
             GetUserByEmailRepository::new(self.database_pool.clone());
+
         let http_response_helper = HttpResponseHelper::new();
         let http_body_helper = HttpBodyHelper::new(sign_up_validator, http_response_helper.clone());
 
