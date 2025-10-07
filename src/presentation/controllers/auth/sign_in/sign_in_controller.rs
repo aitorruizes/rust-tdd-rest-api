@@ -134,7 +134,7 @@ where
                         self.http_response_helper.unauthorized(Some(body))
                     },
                     |generated_auth_token| {
-                        let body = json!({ "authorization_token": generated_auth_token });
+                        let body = json!({ "accessToken":  generated_auth_token });
 
                         self.http_response_helper.ok(Some(body))
                     },

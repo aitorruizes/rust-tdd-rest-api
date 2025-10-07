@@ -126,7 +126,7 @@ where
                     let location = format!("/users/{}", sign_up_response_dto.id);
 
                     self.http_response_helper
-                        .created(json!({ "data": sign_up_response_dto }), &location)
+                        .created(json!({ "user": sign_up_response_dto }), &location)
                 }
                 Err(err) => {
                     let body = match &err {
