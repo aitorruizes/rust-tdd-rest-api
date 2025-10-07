@@ -100,10 +100,16 @@ where
             .body
             .map_or_else(|| "{}".to_string(), |body| body.to_string());
 
-        Response::builder()
+        let mut response_builder = Response::builder()
             .status(http_response_dto.status_code)
-            .header("content-type", "application/json")
-            .body(Body::from(body_string))
-            .unwrap()
+            .header("content-type", "application/json");
+
+        if let Some(headers) = http_response_dto.headers {
+            for (key, value) in headers {
+                response_builder = response_builder.header(key.as_str(), value.as_str());
+            }
+        }
+
+        response_builder.body(Body::from(body_string)).unwrap()
     }
 }

@@ -44,7 +44,7 @@ where
         let axum_handler_adapter = AxumHandlerAdapter::new(self.get_user_by_id_controller);
 
         Router::new().route(
-            "/user/id/{id}",
+            "/users/{id}",
             get({
                 move |path: Path<HashMap<String, String>>, req: Request<Body>| async move {
                     axum_handler_adapter.adapt_handler(path, req).await

@@ -12,7 +12,8 @@ use crate::{
         },
     },
     domain::{
-        entities::user::user_entity::UserEntityBuilder, errors::user::user_errors::UserError,
+        entities::user::user_entity::{UserEntity, UserEntityBuilder},
+        errors::user::user_errors::UserError,
     },
 };
 
@@ -36,7 +37,7 @@ impl std::fmt::Display for SignUpUseCaseError {
 impl std::error::Error for SignUpUseCaseError {}
 
 pub type SignUpUseCaseFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(), SignUpUseCaseError>> + Send + 'a>>;
+    Pin<Box<dyn Future<Output = Result<UserEntity, SignUpUseCaseError>> + Send + 'a>>;
 
 pub trait SignUpUseCasePort: Send + Sync {
     fn perform(&self, sign_up_dto: SignUpDto) -> SignUpUseCaseFuture<'_>;
@@ -98,12 +99,13 @@ where
                 .password(hashed_password)
                 .build();
 
-            self.sign_up_repository
+            let created_user = self
+                .sign_up_repository
                 .execute(user_entity)
                 .await
                 .map_err(SignUpUseCaseError::RepositoryError)?;
 
-            Ok(())
+            Ok(created_user)
         })
     }
 }
@@ -111,6 +113,7 @@ where
 #[cfg(test)]
 mod tests {
     use mockall::mock;
+    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
     use uuid::Uuid;
 
     use crate::{
@@ -127,7 +130,10 @@ mod tests {
                 SignUpUseCase, SignUpUseCaseError, SignUpUseCasePort,
             },
         },
-        domain::{entities::user::user_entity::UserEntity, errors::user::user_errors::UserError},
+        domain::{
+            entities::user::user_entity::{UserEntity, UserEntityBuilder},
+            errors::user::user_errors::UserError,
+        },
     };
 
     mock! {
@@ -178,12 +184,31 @@ mod tests {
 
     #[tokio::test]
     async fn should_succecssfully_execute_sign_up_repository() {
-        let mut sign_up_repository_mock = MockCreateUserRepository::default();
+        let mut create_user_repository_mock = MockCreateUserRepository::default();
 
-        sign_up_repository_mock
+        create_user_repository_mock
             .expect_execute()
             .times(1)
-            .returning(|_| Box::pin(async move { Ok(()) }));
+            .returning(|_| {
+                Box::pin(async move {
+                    let user_entity = UserEntityBuilder::default()
+                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .first_name("John")
+                        .last_name("Doe")
+                        .email("johndoe@gmail.com")
+                        .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
+                        .is_admin(false)
+                        .created_at(
+                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
+                        )
+                        .updated_at(
+                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
+                        )
+                        .build();
+
+                    Ok(user_entity)
+                })
+            });
 
         let mut hasher_adapter_mock = MockHasherAdapter::default();
 
@@ -202,7 +227,7 @@ mod tests {
         let sign_up_use_case = SignUpUseCase::new(
             hasher_adapter_mock,
             id_generator_adapter_mock,
-            sign_up_repository_mock,
+            create_user_repository_mock,
         );
 
         let sign_up_dto = SignUpDto::new(
@@ -219,9 +244,9 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_sign_up_repository_fails() {
-        let mut sign_up_repository_mock = MockCreateUserRepository::default();
+        let mut create_user_repository_mock = MockCreateUserRepository::default();
 
-        sign_up_repository_mock
+        create_user_repository_mock
             .expect_execute()
             .times(1)
             .returning(|_| {
@@ -249,7 +274,7 @@ mod tests {
         let sign_up_use_case = SignUpUseCase::new(
             hasher_adapter_mock,
             id_generator_adapter_mock,
-            sign_up_repository_mock,
+            create_user_repository_mock,
         );
 
         let sign_up_dto = SignUpDto::new(
@@ -271,7 +296,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_error_if_password_hash_fails() {
-        let sign_up_repository_mock = MockCreateUserRepository::default();
+        let create_user_repository_mock = MockCreateUserRepository::default();
         let mut hasher_adapter_mock = MockHasherAdapter::default();
 
         hasher_adapter_mock.expect_hash().times(1).returning(|_| {
@@ -285,7 +310,7 @@ mod tests {
         let sign_up_use_case = SignUpUseCase::new(
             hasher_adapter_mock,
             id_generator_adapter_mock,
-            sign_up_repository_mock,
+            create_user_repository_mock,
         );
 
         let sign_up_dto = SignUpDto::new(

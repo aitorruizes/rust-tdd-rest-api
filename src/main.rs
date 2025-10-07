@@ -127,6 +127,14 @@ pub mod presentation {
             pub mod http_request_dto;
             pub mod http_response_dto;
         }
+
+        pub mod controllers {
+            pub mod auth {
+                pub mod sign_up {
+                    pub mod sign_up_response_dto;
+                }
+            }
+        }
     }
 
     pub mod controllers {

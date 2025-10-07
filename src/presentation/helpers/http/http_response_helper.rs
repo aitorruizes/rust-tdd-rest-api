@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde_json::{Value, json};
 
 use crate::presentation::dtos::http::http_response_dto::HttpResponseDto;
@@ -17,10 +19,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 200,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 200,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
@@ -31,10 +35,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 400,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 400,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
@@ -45,10 +51,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 429,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 429,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
@@ -59,26 +67,27 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 401,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 401,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
 
     #[must_use]
-    pub fn created(&self, body: Option<Value>) -> HttpResponseDto {
-        body.map_or(
-            HttpResponseDto {
-                status_code: 201,
-                body: None,
-            },
-            |value| HttpResponseDto {
-                status_code: 201,
-                body: Some(json!(value)),
-            },
-        )
+    pub fn created(&self, body: Value, location: &str) -> HttpResponseDto {
+        let mut headers: HashMap<String, String> = HashMap::new();
+
+        headers.insert("Location".to_string(), location.to_string());
+
+        HttpResponseDto {
+            status_code: 201,
+            body: Some(body),
+            headers: Some(headers),
+        }
     }
 
     #[must_use]
@@ -87,10 +96,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 204,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 204,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
@@ -101,10 +112,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 500,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 500,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }
@@ -115,10 +128,12 @@ impl HttpResponseHelper {
             HttpResponseDto {
                 status_code: 404,
                 body: None,
+                headers: None,
             },
             |value| HttpResponseDto {
                 status_code: 404,
                 body: Some(json!(value)),
+                headers: None,
             },
         )
     }

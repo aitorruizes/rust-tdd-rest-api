@@ -154,6 +154,7 @@ where
                             "error_code": error_code,
                             "error_message": error_message
                         })),
+                        headers: None,
                     }
                 }
             }

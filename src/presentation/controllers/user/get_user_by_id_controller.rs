@@ -83,7 +83,7 @@ where
                         self.http_response_helper.not_found(Some(body))
                     },
                     |user| {
-                        let body = json!({ "user": user });
+                        let body = json!({ "data": user });
 
                         self.http_response_helper.ok(Some(body))
                     },

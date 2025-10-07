@@ -20,7 +20,7 @@ impl std::fmt::Display for CreateUserRepositoryError {
 impl std::error::Error for CreateUserRepositoryError {}
 
 pub type CreateUserRepositoryFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<(), CreateUserRepositoryError>> + Send + 'a>>;
+    Pin<Box<dyn Future<Output = Result<UserEntity, CreateUserRepositoryError>> + Send + 'a>>;
 
 pub trait CreateUserRepositoryPort: Send + Sync {
     fn execute(&self, user_entity: UserEntity) -> CreateUserRepositoryFuture<'_>;

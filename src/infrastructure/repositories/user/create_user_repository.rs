@@ -24,24 +24,29 @@ impl CreateUserRepository {
 impl CreateUserRepositoryPort for CreateUserRepository {
     fn execute(&self, user_entity: UserEntity) -> CreateUserRepositoryFuture<'_> {
         Box::pin(async move {
-            sqlx::query!(
+            let created_user = sqlx::query_as!(
+                UserEntity,
                 r#"
-                INSERT INTO users (id, first_name, last_name, email, password)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO users (id, first_name, last_name, email, password, is_admin, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING *
                 "#,
                 user_entity.id,
                 user_entity.first_name,
                 user_entity.last_name,
                 user_entity.email,
-                user_entity.password
+                user_entity.password,
+                user_entity.is_admin,
+                user_entity.created_at,
+                user_entity.updated_at,
             )
-            .execute(&*self.database_pool)
+            .fetch_one(&*self.database_pool)
             .await
             .map_err(|err| CreateUserRepositoryError::InsertError {
                 message: err.to_string(),
             })?;
 
-            Ok(())
+            Ok(created_user)
         })
     }
 }

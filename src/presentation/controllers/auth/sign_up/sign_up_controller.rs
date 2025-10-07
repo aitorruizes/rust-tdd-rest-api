@@ -9,7 +9,10 @@ use crate::{
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
     presentation::{
-        dtos::http::http_request_dto::HttpRequestDto,
+        dtos::{
+            controllers::auth::sign_up::sign_up_response_dto::SignUpResponseDto,
+            http::http_request_dto::HttpRequestDto,
+        },
         helpers::http::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
         },
@@ -103,39 +106,53 @@ where
                 extracted_body["password"].as_str().unwrap().to_string(),
             );
 
-            if let Err(err) = self.sign_up_use_case.perform(sign_up_dto).await {
-                let body = match &err {
-                    SignUpUseCaseError::HasherError(error) => {
-                        json!({
-                            "error_code": "internal_server_error",
-                            "error_message": error.to_string()
-                        })
-                    }
-                    SignUpUseCaseError::RepositoryError(error) => {
-                        json!({
-                            "error_code": "internal_server_error",
-                            "error_message": error.to_string()
-                        })
-                    }
-                    SignUpUseCaseError::UserError(error) => {
-                        json!({
-                            "error_code": "use_case_error",
-                            "error_message": error.to_string()
-                        })
-                    }
-                };
+            match self.sign_up_use_case.perform(sign_up_dto).await {
+                Ok(user) => {
+                    let sign_up_response_dto = SignUpResponseDto {
+                        id: user.id,
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        email: user.email,
+                    };
 
-                return match err {
-                    SignUpUseCaseError::UserError(_) => {
-                        self.http_response_helper.bad_request(Some(body))
+                    let location = format!("/users/{}", sign_up_response_dto.id);
+
+                    self.http_response_helper
+                        .created(json!({ "data": sign_up_response_dto }), &location)
+                }
+                Err(err) => {
+                    let body = match &err {
+                        SignUpUseCaseError::HasherError(error) => {
+                            json!({
+                                "error_code": "internal_server_error",
+                                "error_message": error.to_string()
+                            })
+                        }
+                        SignUpUseCaseError::RepositoryError(error) => {
+                            json!({
+                                "error_code": "internal_server_error",
+                                "error_message": error.to_string()
+                            })
+                        }
+                        SignUpUseCaseError::UserError(error) => {
+                            json!({
+                                "error_code": "use_case_error",
+                                "error_message": error.to_string()
+                            })
+                        }
+                    };
+
+                    match err {
+                        SignUpUseCaseError::UserError(_) => {
+                            self.http_response_helper.bad_request(Some(body))
+                        }
+                        SignUpUseCaseError::HasherError(_)
+                        | SignUpUseCaseError::RepositoryError(_) => {
+                            self.http_response_helper.internal_server_error(Some(body))
+                        }
                     }
-                    SignUpUseCaseError::HasherError(_) | SignUpUseCaseError::RepositoryError(_) => {
-                        self.http_response_helper.internal_server_error(Some(body))
-                    }
-                };
+                }
             }
-
-            self.http_response_helper.no_content(None)
         })
     }
 }
