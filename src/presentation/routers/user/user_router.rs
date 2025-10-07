@@ -4,6 +4,7 @@ use axum::{
     Router,
     body::Body,
     extract::{Path, Request},
+    http::StatusCode,
     middleware::{self},
     routing::get,
 };
@@ -50,6 +51,7 @@ where
                     axum_handler_adapter.adapt_handler(path, req).await
                 }
             })
+            .options(|| async { StatusCode::OK })
             .layer(middleware::from_fn({
                 move |req, next| {
                     let auth_middleware = auth_middleware.clone();

@@ -1,5 +1,6 @@
 use axum::{Json, Router, http::StatusCode, response::IntoResponse};
 use serde_json::json;
+use tower::ServiceBuilder;
 use tower_governor::{GovernorError, GovernorLayer, governor::GovernorConfigBuilder};
 use tower_helmet::HelmetLayer;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -45,14 +46,16 @@ where
     GetUserByIdController: ControllerPort + Clone + Send + Sync + 'static,
 {
     fn register_routes(self) -> Router {
-        let auth_router = AuthRouter::new(self.sign_up_controller, self.sign_in_controller);
-        let user_router = UserRouter::new(self.get_user_by_id_controller);
+        let auth_router =
+            AuthRouter::new(self.sign_up_controller, self.sign_in_controller).register_routes();
+
+        let user_router = UserRouter::new(self.get_user_by_id_controller).register_routes();
         let cors_middleware = CorsLayer::permissive();
         let trace_layer_middleware = TraceLayer::new_for_http();
 
         let governor_config = GovernorConfigBuilder::default()
-            .per_second(4)
-            .burst_size(2)
+            .per_second(2)
+            .burst_size(5)
             .finish()
             .unwrap();
 
@@ -86,17 +89,17 @@ where
             });
 
         let helmet_middleware = HelmetLayer::with_defaults();
-
-        let merged_routers = auth_router
-            .register_routes()
-            .merge(user_router.register_routes());
+        let merged_routers = auth_router.merge(user_router);
 
         Router::new()
             .nest("/api/v1", merged_routers)
-            .layer(cors_middleware)
+            .layer(
+                ServiceBuilder::new()
+                    .layer(cors_middleware)
+                    .layer(governor_middleware)
+                    .layer(helmet_middleware),
+            )
             .layer(trace_layer_middleware)
-            .layer(helmet_middleware)
-            .layer(governor_middleware)
             .fallback(|| async {
                 (
                     StatusCode::NOT_FOUND,

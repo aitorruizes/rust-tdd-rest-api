@@ -71,7 +71,9 @@ where
                     .unwrap();
             };
 
-        match self.auth_port.verify_auth_token(authorization_token) {
+        let splitted_token = authorization_token.trim_start_matches("Bearer ").trim();
+
+        match self.auth_port.verify_auth_token(splitted_token) {
             Ok(()) => next.run(req).await,
             Err(err) => {
                 let body = serde_json::to_string(&json!({

@@ -8,6 +8,7 @@ use crate::{
         },
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
+    domain::errors::user::user_errors::UserError,
     presentation::{
         dtos::{
             controllers::auth::sign_up::sign_up_response_dto::SignUpResponseDto,
@@ -39,7 +40,7 @@ where
 impl<Validator, UseCase, PatternMatchingAdapter>
     SignUpController<Validator, UseCase, PatternMatchingAdapter>
 where
-    Validator: ValidatorPort + Clone + Send + Sync,
+    Validator: ValidatorPort + Send + Sync + Clone,
     UseCase: SignUpUseCasePort + Send + Sync + Clone + 'static,
     PatternMatchingAdapter: PatternMatchingPort + Send + Sync + Clone + 'static,
 {
@@ -151,9 +152,14 @@ where
                     };
 
                     match err {
-                        SignUpUseCaseError::UserError(_) => {
-                            self.http_response_helper.bad_request(Some(body))
-                        }
+                        SignUpUseCaseError::UserError(error) => match error {
+                            UserError::PasswordsDoNotMatch => {
+                                self.http_response_helper.bad_request(Some(body))
+                            }
+                            UserError::UserAlreadyExists => {
+                                self.http_response_helper.conflict(Some(body))
+                            }
+                        },
                         SignUpUseCaseError::HasherError(_)
                         | SignUpUseCaseError::RepositoryError(_) => {
                             self.http_response_helper.internal_server_error(Some(body))

@@ -66,7 +66,10 @@ impl AuthPort for JsonWebTokenAdapter {
         .map_err(|err| match err.kind() {
             jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::ExpiredTokenError,
             jsonwebtoken::errors::ErrorKind::InvalidToken => AuthError::InvalidTokenError,
-            _ => AuthError::UnexpectedError,
+            _ => {
+                println!("{err}");
+                AuthError::UnexpectedError
+            }
         })
     }
 }

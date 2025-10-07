@@ -137,6 +137,22 @@ impl HttpResponseHelper {
             },
         )
     }
+
+    #[must_use]
+    pub fn conflict(&self, body: Option<Value>) -> HttpResponseDto {
+        body.map_or(
+            HttpResponseDto {
+                status_code: 409,
+                body: None,
+                headers: None,
+            },
+            |value| HttpResponseDto {
+                status_code: 409,
+                body: Some(json!(value)),
+                headers: None,
+            },
+        )
+    }
 }
 
 impl Default for HttpResponseHelper {
