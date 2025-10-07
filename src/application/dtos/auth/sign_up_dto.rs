@@ -7,6 +7,7 @@ pub struct SignUpDto {
     pub last_name: String,
     pub email: String,
     pub password: String,
+    pub password_confirmation: String,
 }
 
 impl SignUpDto {
@@ -16,6 +17,7 @@ impl SignUpDto {
         last_name: String,
         email: String,
         password: String,
+        password_confirmation: String,
     ) -> Self {
         Self {
             id: None,
@@ -23,6 +25,7 @@ impl SignUpDto {
             last_name,
             email,
             password,
+            password_confirmation,
         }
     }
 }

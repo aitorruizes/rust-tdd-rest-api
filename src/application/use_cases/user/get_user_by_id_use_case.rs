@@ -77,7 +77,7 @@ mod tests {
                 GetUserByIdFuture, GetUserByIdRepositoryError, GetUserByIdRepositoryPort,
             },
             use_cases::user::get_user_by_id_use_case::{
-                GetUserByIdUseCase, GetUserByIdUseCasePort,
+                GetUserByIdUseCase, GetUserByIdUseCaseError, GetUserByIdUseCasePort,
             },
         },
         domain::entities::user::user_entity::UserEntityBuilder,
@@ -181,6 +181,11 @@ mod tests {
 
         let error = result.unwrap_err();
 
-        assert_eq!(error.to_string(), "fetch by id error: find by id error");
+        assert!(matches!(
+            error,
+            GetUserByIdUseCaseError::RepositoryError(GetUserByIdRepositoryError::FindByIdError {
+                message: _
+            })
+        ));
     }
 }

@@ -67,8 +67,12 @@ where
 {
     fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {
-            self.http_body_helper
-                .validate_request_body(http_request_dto.body.clone());
+            if let Some(http_response_dto) = self
+                .http_body_helper
+                .validate_request_body(http_request_dto.body.clone())
+            {
+                return http_response_dto;
+            }
 
             let extracted_body = http_request_dto.body.unwrap();
 
@@ -100,10 +104,14 @@ where
             }
 
             let sign_up_dto = SignUpDto::new(
-                extracted_body["first_name"].as_str().unwrap().to_string(),
-                extracted_body["last_name"].as_str().unwrap().to_string(),
+                extracted_body["firstName"].as_str().unwrap().to_string(),
+                extracted_body["lastName"].as_str().unwrap().to_string(),
                 extracted_body["email"].as_str().unwrap().to_string(),
                 extracted_body["password"].as_str().unwrap().to_string(),
+                extracted_body["passwordConfirmation"]
+                    .as_str()
+                    .unwrap()
+                    .to_string(),
             );
 
             match self.sign_up_use_case.perform(sign_up_dto).await {

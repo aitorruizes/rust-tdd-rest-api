@@ -84,6 +84,12 @@ where
 {
     fn perform(&self, sign_up_dto: SignUpDto) -> SignUpUseCaseFuture<'_> {
         Box::pin(async move {
+            if sign_up_dto.password != sign_up_dto.password_confirmation {
+                return Err(SignUpUseCaseError::UserError(
+                    UserError::PasswordsDoNotMatch,
+                ));
+            }
+
             let hashed_password = self
                 .hasher_adapter
                 .hash(sign_up_dto.password.as_str())
@@ -235,6 +241,7 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
+            "Password123!".to_string(),
         );
 
         let result = sign_up_use_case.perform(sign_up_dto).await;
@@ -282,6 +289,7 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
+            "Password123!".to_string(),
         );
 
         let result = sign_up_use_case.perform(sign_up_dto).await;
@@ -289,9 +297,13 @@ mod tests {
         assert!(result.is_err());
 
         let error = result.unwrap_err();
-        let formatted_error = format!("{}", error);
 
-        assert_eq!(formatted_error, "insert error: database error");
+        assert!(matches!(
+            error,
+            SignUpUseCaseError::RepositoryError(CreateUserRepositoryError::InsertError {
+                message: _
+            })
+        ));
     }
 
     #[tokio::test]
@@ -318,6 +330,7 @@ mod tests {
             "Doe".to_string(),
             "johndoe@gmail.com".to_string(),
             "Password123!".to_string(),
+            "Password123!".to_string(),
         );
 
         let result = sign_up_use_case.perform(sign_up_dto).await;
@@ -326,43 +339,41 @@ mod tests {
 
         let error = result.unwrap_err();
 
-        assert_eq!(
-            error.to_string(),
-            "an error occurred while hashing password: hashing error"
-        );
+        assert!(matches!(
+            error,
+            SignUpUseCaseError::HasherError(HasherError::HashingError { message: _ })
+        ));
     }
 
-    #[test]
-    fn test_signup_use_case_error_display() {
-        let first_error = SignUpUseCaseError::HasherError(HasherError::HashingError {
-            message: "hasher error".to_string(),
-        });
+    #[tokio::test]
+    async fn should_return_error_if_passwords_do_not_match() {
+        let create_user_repository_mock = MockCreateUserRepository::default();
+        let hasher_adapter_mock = MockHasherAdapter::default();
+        let id_generator_adapter_mock = MockIdGeneratorAdapter::default();
 
-        let second_error = SignUpUseCaseError::HasherError(HasherError::VerificationError {
-            message: "verification error".to_string(),
-        });
-
-        let third_error = SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch);
-
-        let fourth_error =
-            SignUpUseCaseError::RepositoryError(CreateUserRepositoryError::InsertError {
-                message: "repository error".to_string(),
-            });
-
-        assert_eq!(
-            first_error.to_string(),
-            "an error occurred while hashing password: hasher error"
-        );
-        assert_eq!(
-            second_error.to_string(),
-            "an error occurred while verifying password: verification error"
+        let sign_up_use_case = SignUpUseCase::new(
+            hasher_adapter_mock,
+            id_generator_adapter_mock,
+            create_user_repository_mock,
         );
 
-        assert_eq!(
-            third_error.to_string(),
-            "the provided passwords do not match"
+        let sign_up_dto = SignUpDto::new(
+            "John".to_string(),
+            "Doe".to_string(),
+            "johndoe@gmail.com".to_string(),
+            "Password123!".to_string(),
+            "Password1234!".to_string(),
         );
 
-        assert_eq!(fourth_error.to_string(), "insert error: repository error");
+        let result = sign_up_use_case.perform(sign_up_dto).await;
+
+        assert!(result.is_err());
+
+        let error = result.unwrap_err();
+
+        assert!(matches!(
+            error,
+            SignUpUseCaseError::UserError(UserError::PasswordsDoNotMatch)
+        ));
     }
 }

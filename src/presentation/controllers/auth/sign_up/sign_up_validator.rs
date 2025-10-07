@@ -17,11 +17,11 @@ impl ValidatorPort for SignUpValidator {
         let mut errors = vec![];
 
         let required_fields = [
-            "first_name",
-            "last_name",
+            "firstName",
+            "lastName",
             "email",
             "password",
-            "password_confirmation",
+            "passwordConfirmation",
         ];
 
         for &field in &required_fields {
@@ -35,16 +35,6 @@ impl ValidatorPort for SignUpValidator {
                 },
                 None => errors.push(json!({"field": field, "error": "missing"})),
             }
-        }
-
-        if let (Some(password), Some(password_confirmation)) = (
-            fields.get("password").and_then(|v| v.as_str()),
-            fields.get("password_confirmation").and_then(|v| v.as_str()),
-        ) && password != password_confirmation
-        {
-            errors.push(
-                    json!({"fields": ["password", "password_confirmation"], "error": "passwords do not match"}),
-                );
         }
 
         if errors.is_empty() {

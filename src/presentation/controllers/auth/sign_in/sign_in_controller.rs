@@ -59,8 +59,12 @@ where
 {
     fn handle(&self, http_request_dto: HttpRequestDto) -> ControllerFuture<'_> {
         Box::pin(async move {
-            self.http_body_helper
-                .validate_request_body(http_request_dto.body.clone());
+            if let Some(http_response_dto) = self
+                .http_body_helper
+                .validate_request_body(http_request_dto.body.clone())
+            {
+                return http_response_dto;
+            }
 
             let extracted_body = http_request_dto.body.unwrap();
 

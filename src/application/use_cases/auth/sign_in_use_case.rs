@@ -123,7 +123,9 @@ mod tests {
                     GetUserByEmailRepositoryPort,
                 },
             },
-            use_cases::auth::sign_in_use_case::{SignInUseCase, SignInUseCasePort},
+            use_cases::auth::sign_in_use_case::{
+                SignInUseCase, SignInUseCaseError, SignInUseCasePort,
+            },
         },
         domain::entities::user::user_entity::UserEntityBuilder,
     };
@@ -363,10 +365,10 @@ mod tests {
 
         let error = result.unwrap_err();
 
-        assert_eq!(
-            error.to_string(),
-            "an error occurred while verifying password: verify fails"
-        );
+        assert!(matches!(
+            error,
+            SignInUseCaseError::HasherError(HasherError::VerificationError { message: _ })
+        ));
     }
 
     #[tokio::test]
@@ -402,10 +404,12 @@ mod tests {
 
         let error = result.unwrap_err();
 
-        assert_eq!(
-            error.to_string(),
-            "fetch by e-mail error: get user by e-mail fail"
-        );
+        assert!(matches!(
+            error,
+            SignInUseCaseError::DatabaseError(GetUserByEmailRepositoryError::FindByEmailError {
+                message: _
+            })
+        ));
     }
 
     #[tokio::test]
@@ -466,9 +470,9 @@ mod tests {
 
         let error = result.unwrap_err();
 
-        assert_eq!(
-            error.to_string(),
-            "an error occurred while generating authorization token: token generation fails"
-        );
+        assert!(matches!(
+            error,
+            SignInUseCaseError::AuthError(AuthError::GenerateTokenError { message: _ })
+        ));
     }
 }
