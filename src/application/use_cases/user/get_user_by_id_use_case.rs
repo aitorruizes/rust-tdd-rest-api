@@ -127,7 +127,7 @@ mod tests {
 
         let user = content.unwrap();
 
-        assert_eq!(user.id.to_string(), "dba86129-90be-4409-a5a3-396db9335a57");
+        assert_eq!(user.id, "dba86129-90be-4409-a5a3-396db9335a57");
         assert_eq!(user.first_name, "John");
         assert_eq!(user.last_name, "Doe");
         assert_eq!(user.email, "johndoe@gmail.com");
