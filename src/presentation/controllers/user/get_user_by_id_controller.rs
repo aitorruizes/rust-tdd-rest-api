@@ -7,6 +7,7 @@ use crate::{
         },
         use_cases::user::get_user_by_id_use_case::GetUserByIdUseCasePort,
     },
+    infrastructure::mappers::response::user::user_response::UserResponse,
     presentation::{
         dtos::http::http_request_dto::HttpRequestDto,
         helpers::http::http_response_helper::HttpResponseHelper,
@@ -81,8 +82,9 @@ where
 
                         self.http_response_helper.not_found(Some(body))
                     },
-                    |user| {
-                        let body = json!({ "user": user });
+                    |user_entity| {
+                        let user_response = UserResponse::from(user_entity);
+                        let body = json!({ "user": user_response });
 
                         self.http_response_helper.ok(Some(body))
                     },

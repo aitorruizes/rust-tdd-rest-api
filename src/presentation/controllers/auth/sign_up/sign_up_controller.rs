@@ -9,11 +9,9 @@ use crate::{
         use_cases::auth::sign_up_use_case::{SignUpUseCaseError, SignUpUseCasePort},
     },
     domain::errors::user::user_errors::UserError,
+    infrastructure::mappers::response::user::user_response::UserResponse,
     presentation::{
-        dtos::{
-            controllers::auth::sign_up::sign_up_response_dto::SignUpResponseDto,
-            http::http_request_dto::HttpRequestDto,
-        },
+        dtos::http::http_request_dto::HttpRequestDto,
         helpers::http::{
             http_body_helper::HttpBodyHelper, http_response_helper::HttpResponseHelper,
         },
@@ -109,18 +107,12 @@ where
             );
 
             match self.sign_up_use_case.perform(sign_up_dto).await {
-                Ok(user) => {
-                    let sign_up_response_dto = SignUpResponseDto {
-                        id: user.id,
-                        first_name: user.first_name,
-                        last_name: user.last_name,
-                        email: user.email,
-                    };
-
-                    let location = format!("/users/{}", sign_up_response_dto.id);
+                Ok(user_entity) => {
+                    let user_response = UserResponse::from(user_entity);
+                    let location = format!("/users/{}", user_response.id);
 
                     self.http_response_helper
-                        .created(json!({ "user": sign_up_response_dto }), &location)
+                        .created(json!({ "user": user_response }), &location)
                 }
                 Err(err) => {
                     let body = match &err {

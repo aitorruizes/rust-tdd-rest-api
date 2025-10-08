@@ -85,7 +85,7 @@ where
 
                     let generated_auth_token = self
                         .auth_adapter
-                        .generate_auth_token(user.id)
+                        .generate_auth_token(&user.id)
                         .map_err(SignInUseCaseError::AuthError)?;
 
                     Ok(Some(generated_auth_token))
@@ -99,8 +99,6 @@ where
 #[cfg(test)]
 mod tests {
     use mockall::mock;
-    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
-    use uuid::Uuid;
 
     use crate::{
         application::{
@@ -139,7 +137,7 @@ mod tests {
         pub AuthAdapter {}
 
         impl AuthPort for AuthAdapter {
-            fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError>;
+            fn generate_auth_token(&self, user_id: &str) -> Result<String, AuthError>;
             fn verify_auth_token(&self, token: &str) -> Result<(), AuthError>;
         }
 
@@ -185,18 +183,14 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     let user_entity = UserEntityBuilder::default()
-                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .id("dba86129-90be-4409-a5a3-396db9335a57")
                         .first_name("John")
                         .last_name("Doe")
                         .email("johndoe@gmail.com")
                         .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
                         .is_admin(false)
-                        .created_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
-                        .updated_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
+                        .created_at(1_695_996_669)
+                        .updated_at(1_695_996_669)
                         .build();
 
                     Ok(Some(user_entity))
@@ -238,18 +232,14 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     let user_entity = UserEntityBuilder::default()
-                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .id("dba86129-90be-4409-a5a3-396db9335a57")
                         .first_name("John")
                         .last_name("Doe")
                         .email("johndoe@gmail.com")
                         .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
                         .is_admin(false)
-                        .created_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
-                        .updated_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
+                        .created_at(1_695_996_669)
+                        .updated_at(1_695_996_669)
                         .build();
 
                     Ok(Some(user_entity))
@@ -322,18 +312,14 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     let user_entity = UserEntityBuilder::default()
-                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .id("dba86129-90be-4409-a5a3-396db9335a57")
                         .first_name("John")
                         .last_name("Doe")
                         .email("johndoe@gmail.com")
                         .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
                         .is_admin(false)
-                        .created_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
-                        .updated_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
+                        .created_at(1_695_996_669)
+                        .updated_at(1_695_996_669)
                         .build();
 
                     Ok(Some(user_entity))
@@ -427,18 +413,14 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     let user_entity = UserEntityBuilder::default()
-                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .id("dba86129-90be-4409-a5a3-396db9335a57")
                         .first_name("John")
                         .last_name("Doe")
                         .email("johndoe@gmail.com")
                         .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
                         .is_admin(false)
-                        .created_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
-                        .updated_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
+                        .created_at(1_695_996_669)
+                        .updated_at(1_695_996_669)
                         .build();
 
                     Ok(Some(user_entity))

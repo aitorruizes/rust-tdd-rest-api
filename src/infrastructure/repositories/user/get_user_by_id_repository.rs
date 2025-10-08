@@ -7,7 +7,7 @@ use crate::{
     application::ports::repositories::user::get_user_by_id_repository_port::{
         GetUserByIdFuture, GetUserByIdRepositoryError, GetUserByIdRepositoryPort,
     },
-    domain::entities::user::user_entity::UserEntity,
+    infrastructure::models::user::user_model::UserModel,
 };
 
 #[derive(Clone)]
@@ -25,16 +25,20 @@ impl GetUserByIdRepository {
 impl GetUserByIdRepositoryPort for GetUserByIdRepository {
     fn execute(&self, id: String) -> GetUserByIdFuture<'_> {
         Box::pin(async move {
-            let user_entity = sqlx::query_as!(
-                UserEntity,
-                "SELECT * FROM users WHERE id = $1",
-                Uuid::parse_str(&id).unwrap()
-            )
-            .fetch_optional(&*self.database_pool)
-            .await
-            .map_err(|err| GetUserByIdRepositoryError::FindByIdError {
-                message: err.to_string(),
-            })?;
+            let user_uuid =
+                Uuid::parse_str(&id).map_err(|_| GetUserByIdRepositoryError::FindByIdError {
+                    message: "Invalid UUID format".to_string(),
+                })?;
+
+            let user_model =
+                sqlx::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", user_uuid)
+                    .fetch_optional(&*self.database_pool)
+                    .await
+                    .map_err(|err| GetUserByIdRepositoryError::FindByIdError {
+                        message: err.to_string(),
+                    })?;
+
+            let user_entity = user_model.map(Into::into);
 
             Ok(user_entity)
         })

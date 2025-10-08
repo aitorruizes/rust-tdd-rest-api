@@ -1,8 +1,6 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::application::ports::auth::auth_port::{AuthError, AuthPort};
 
@@ -24,7 +22,7 @@ impl JsonWebTokenAdapter {
 }
 
 impl AuthPort for JsonWebTokenAdapter {
-    fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError> {
+    fn generate_auth_token(&self, user_id: &str) -> Result<String, AuthError> {
         let expiration = usize::try_from(
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)

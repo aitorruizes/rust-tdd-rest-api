@@ -119,6 +119,20 @@ pub mod infrastructure {
             }
         }
     }
+
+    pub mod mappers {
+        pub mod response {
+            pub mod user {
+                pub mod user_response;
+            }
+        }
+    }
+
+    pub mod models {
+        pub mod user {
+            pub mod user_model;
+        }
+    }
 }
 
 pub mod presentation {
@@ -126,14 +140,6 @@ pub mod presentation {
         pub mod http {
             pub mod http_request_dto;
             pub mod http_response_dto;
-        }
-
-        pub mod controllers {
-            pub mod auth {
-                pub mod sign_up {
-                    pub mod sign_up_response_dto;
-                }
-            }
         }
     }
 

@@ -7,6 +7,7 @@ use crate::{
         CreateUserRepositoryError, CreateUserRepositoryFuture, CreateUserRepositoryPort,
     },
     domain::entities::user::user_entity::UserEntity,
+    infrastructure::models::user::user_model::UserModel,
 };
 
 #[derive(Clone)]
@@ -24,21 +25,23 @@ impl CreateUserRepository {
 impl CreateUserRepositoryPort for CreateUserRepository {
     fn execute(&self, user_entity: UserEntity) -> CreateUserRepositoryFuture<'_> {
         Box::pin(async move {
+            let user_model = UserModel::from(user_entity);
+
             let created_user = sqlx::query_as!(
-                UserEntity,
+                UserModel,
                 r#"
                 INSERT INTO users (id, first_name, last_name, email, password, is_admin, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
                 "#,
-                user_entity.id,
-                user_entity.first_name,
-                user_entity.last_name,
-                user_entity.email,
-                user_entity.password,
-                user_entity.is_admin,
-                user_entity.created_at,
-                user_entity.updated_at,
+                user_model.id,
+                user_model.first_name,
+                user_model.last_name,
+                user_model.email,
+                user_model.password,
+                user_model.is_admin,
+                user_model.created_at,
+                user_model.updated_at,
             )
             .fetch_one(&*self.database_pool)
             .await
@@ -46,7 +49,9 @@ impl CreateUserRepositoryPort for CreateUserRepository {
                 message: err.to_string(),
             })?;
 
-            Ok(created_user)
+            let user_entity = created_user.into();
+
+            Ok(user_entity)
         })
     }
 }

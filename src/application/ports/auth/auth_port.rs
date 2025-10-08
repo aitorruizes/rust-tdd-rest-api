@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum AuthError {
     GenerateTokenError { message: String },
@@ -38,7 +36,7 @@ pub trait AuthPort: Send + Sync {
     /// # Errors
     ///
     /// Returns `AuthError` if the token generation fails for any reason.
-    fn generate_auth_token(&self, user_id: Uuid) -> Result<String, AuthError>;
+    fn generate_auth_token(&self, user_id: &str) -> Result<String, AuthError>;
 
     /// Verifies an authentication token.
     ///

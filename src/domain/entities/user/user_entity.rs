@@ -1,50 +1,44 @@
-use serde::Serialize;
-use time::OffsetDateTime;
-use uuid::Uuid;
-
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserEntity {
-    pub id: Uuid,
+    pub id: String,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
     pub password: String,
     pub is_admin: bool,
-    #[serde(with = "time::serde::rfc3339")]
-    pub created_at: OffsetDateTime,
-    #[serde(with = "time::serde::rfc3339")]
-    pub updated_at: OffsetDateTime,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 #[derive(Debug, Clone)]
 pub struct UserEntityBuilder {
-    id: Uuid,
+    id: String,
     first_name: String,
     last_name: String,
     email: String,
     password: String,
     is_admin: bool,
-    created_at: OffsetDateTime,
-    updated_at: OffsetDateTime,
+    created_at: i64,
+    updated_at: i64,
 }
 
 impl UserEntityBuilder {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
-            id: Uuid::nil(),
+            id: String::new(),
             first_name: String::new(),
             last_name: String::new(),
             email: String::new(),
             password: String::new(),
             is_admin: false,
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: OffsetDateTime::now_utc(),
+            created_at: 0,
+            updated_at: 0,
         }
     }
 
     #[must_use]
-    pub fn id(mut self, id: impl Into<Uuid>) -> Self {
+    pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = id.into();
         self
     }
@@ -80,13 +74,13 @@ impl UserEntityBuilder {
     }
 
     #[must_use]
-    pub fn created_at(mut self, created_at: impl Into<OffsetDateTime>) -> Self {
+    pub fn created_at(mut self, created_at: impl Into<i64>) -> Self {
         self.created_at = created_at.into();
         self
     }
 
     #[must_use]
-    pub fn updated_at(mut self, updated_at: impl Into<OffsetDateTime>) -> Self {
+    pub fn updated_at(mut self, updated_at: impl Into<i64>) -> Self {
         self.updated_at = updated_at.into();
         self
     }

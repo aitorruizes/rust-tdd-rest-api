@@ -51,7 +51,9 @@ where
                 "/auth/sign-up",
                 post({
                     move |path: Path<HashMap<String, String>>, request: Request<Body>| async move {
-                        sign_up_controller_adapter.adapt_handler(path, request).await
+                        sign_up_controller_adapter
+                            .adapt_handler(path, request)
+                            .await
                     }
                 }),
             )
@@ -59,7 +61,9 @@ where
                 "/auth/sign-in",
                 post({
                     move |path: Path<HashMap<String, String>>, request: Request<Body>| async move {
-                        sign_in_controller_adapter.adapt_handler(path, request).await
+                        sign_in_controller_adapter
+                            .adapt_handler(path, request)
+                            .await
                     }
                 }),
             )

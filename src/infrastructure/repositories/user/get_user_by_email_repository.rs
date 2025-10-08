@@ -6,7 +6,7 @@ use crate::{
     application::ports::repositories::user::get_user_by_email_repository_port::{
         GetUserByEmailRepositoryError, GetUserByEmailRepositoryFuture, GetUserByEmailRepositoryPort,
     },
-    domain::entities::user::user_entity::UserEntity,
+    infrastructure::models::user::user_model::UserModel,
 };
 
 #[derive(Clone)]
@@ -24,13 +24,15 @@ impl GetUserByEmailRepository {
 impl GetUserByEmailRepositoryPort for GetUserByEmailRepository {
     fn execute(&self, email: String) -> GetUserByEmailRepositoryFuture<'_> {
         Box::pin(async move {
-            let user_entity =
-                sqlx::query_as!(UserEntity, "SELECT * FROM users WHERE email = $1", email)
+            let user_model =
+                sqlx::query_as!(UserModel, "SELECT * FROM users WHERE email = $1", email)
                     .fetch_optional(&*self.database_pool)
                     .await
                     .map_err(|err| GetUserByEmailRepositoryError::FindByEmailError {
                         message: err.to_string(),
                     })?;
+
+            let user_entity = user_model.map(Into::into);
 
             Ok(user_entity)
         })

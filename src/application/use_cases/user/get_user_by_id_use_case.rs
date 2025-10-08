@@ -65,8 +65,6 @@ where
 #[cfg(test)]
 mod tests {
     use mockall::mock;
-    use time::{OffsetDateTime, format_description::well_known::Rfc3339};
-    use uuid::Uuid;
 
     use crate::{
         application::{
@@ -103,18 +101,14 @@ mod tests {
             .returning(|_| {
                 Box::pin(async move {
                     let user_entity = UserEntityBuilder::default()
-                        .id(Uuid::parse_str("dba86129-90be-4409-a5a3-396db9335a57").unwrap())
+                        .id("dba86129-90be-4409-a5a3-396db9335a57")
                         .first_name("John")
                         .last_name("Doe")
                         .email("johndoe@gmail.com")
                         .password("$2b$12$D/HbcVNFxNrOzRmoy4M0nu1ZUzJcTDt5UVUcxEb/vKfRZsTL0ORa.")
                         .is_admin(false)
-                        .created_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
-                        .updated_at(
-                            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap(),
-                        )
+                        .created_at(1_695_996_669)
+                        .updated_at(1_695_996_669)
                         .build();
 
                     Ok(Some(user_entity))
@@ -144,16 +138,8 @@ mod tests {
         );
 
         assert!(!user.is_admin);
-
-        assert_eq!(
-            user.created_at,
-            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap()
-        );
-
-        assert_eq!(
-            user.updated_at,
-            OffsetDateTime::parse("2025-09-22T14:57:49.66802Z", &Rfc3339).unwrap()
-        );
+        assert_eq!(user.created_at, 1_695_996_669);
+        assert_eq!(user.updated_at, 1_695_996_669);
     }
 
     #[tokio::test]

@@ -1,5 +1,3 @@
-use uuid::Uuid;
-
 use crate::application::ports::id_generator::id_generator_port::IdGeneratorPort;
 
 #[derive(Clone)]
@@ -13,8 +11,8 @@ impl UuidAdapter {
 }
 
 impl IdGeneratorPort for UuidAdapter {
-    fn generate_id(&self) -> Uuid {
-        uuid::Uuid::new_v4()
+    fn generate_id(&self) -> String {
+        uuid::Uuid::new_v4().to_string()
     }
 }
 
